@@ -3,15 +3,20 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-      "build": "unknown now"
-    },
-    "dependencies": {
+        "build": "webpack --config webpack.config.js"
     },
     "devDependencies": {
-      "typescript": "^5",
-      "@types/node": "^20",
-      "@types/react": "^19",
-      "@types/react-dom": "^19"
+        "@types/lodash": "^4.17.15",
+        "@types/node": "^20",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "typescript": "^5"
+    },
+    "dependencies": {
+        "lodash": "^4.17.21",
+        "webpack": "^5.97.1",
+        "webpack-cli": "^6.0.1",
+        "webpack-node-externals": "^3.0.0",
+        "ts-loader": "^9.5.2"
     }
-  }
-  
+}
