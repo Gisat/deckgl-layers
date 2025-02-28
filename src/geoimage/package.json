@@ -1,0 +1,17 @@
+{
+    "name": "deckgl-layers-npm",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+      "build": "unknown now"
+    },
+    "dependencies": {
+    },
+    "devDependencies": {
+      "typescript": "^5",
+      "@types/node": "^20",
+      "@types/react": "^19",
+      "@types/react-dom": "^19"
+    }
+  }
+  
