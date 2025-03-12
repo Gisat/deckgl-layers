@@ -1,6 +1,8 @@
 {
     "name": "deckgl-layers-npm",
     "version": "0.1.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "build:barrels": "barrelsby -c barrelsby.json",
         "build:webpack": "webpack --config webpack.config.ts",
