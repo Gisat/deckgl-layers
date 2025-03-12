@@ -4,7 +4,7 @@ This repository contains source of Geoimage NPM and set of free sandbox demos fo
 Folders:
 - app: NextJS route structure with demo presentations and data APIs
 - features: Components and logic used in demos, but not included in NPM
-- geoImage: Final NPM product
+- geoimage: Final NPM product
 - tests: Test scenarios for any peice of code.
 
 
