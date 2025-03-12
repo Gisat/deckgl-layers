@@ -8,29 +8,25 @@ Folders:
 - tests: Test scenarios for any peice of code.
 
 
-## Installation (DEV)
-1. Clone this demo
-    ```bash
-    git clone https://github.com/your-repo/geoimage-npm.git
-    ```
+## Installation
+- Install Node and NPM
+- Clone the project and go to the project root
+- Go into `/geoimage` and open terminal there
+- Run `npm i` and `npm run build`
+- Return back to root terminal
+- Open terminal and run (`npm i`)
+- Create an `.env` file by sample in `/doc`
+- Run `npm run dev`
 
-2. Navigate to the project directory
-    ```bash
-    cd geoimage-npm
-    ```
+## NPM Development
 
-3. Install dependencies
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+To see how to buid NPM output, please visit `/geoimage` and read `Readme.md` there.
 
-4. Run the development server
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+### Dependency managemet
+Root and `/geoimage` has separated NPM dependencies (own `package.json`, `tsconfig` etc.)
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the demo
+Changes must be mabe in relevant location:
+- Changes for demo -> `/`
+- Changes for npm product -> `/geoimage`
+
+Imports into `/app` should be done from `/geoimage/index.ts` or as local NPM install
