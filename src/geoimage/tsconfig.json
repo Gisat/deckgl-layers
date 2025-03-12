@@ -9,11 +9,11 @@
       "declaration": true,
       "declarationDir": "dist",
       "outDir": "dist",
-      "baseUrl": "./",
       "noImplicitAny": false,
+      "baseUrl": ".",
       "paths": {
-        "(shared)/*": ["./(shared)/*"]
-      }
+        "@geoimage/*": ["./*"]
+      },
     },
     "include": ["**/*"],
     "exclude": ["node_modules", "dist"]
