@@ -1,3 +1,3 @@
-import * as helpers from "./helpers/code.formating";
+import * as helpers from "./src/helpers/code.formating";
 
 export { helpers };
