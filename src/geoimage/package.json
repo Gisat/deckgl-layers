@@ -2,22 +2,26 @@
     "name": "deckgl-layers-npm",
     "version": "0.1.0",
     "scripts": {
-        "build": "webpack --config webpack.config.js"
+        "build:barrels": "barrelsby -c barrelsby.json",
+        "build:webpack": "webpack --config webpack.config.ts",
+        "build": "npm run build:barrels && npm run build:webpack"
     },
     "dependencies": {
         "lodash": "^4.17.21"
     },
     "devDependencies": {
         "@types/lodash": "^4.17.15",
-        "@types/node": "^20",
+        "@types/node": "^20.17.24",
         "@types/react": "^19",
         "@types/react-dom": "^19",
+        "@types/webpack": "^5.28.5",
         "barrelsby": "^2.8.1",
         "ts-loader": "^9.5.2",
+        "ts-node": "^10.9.2",
         "tsc-alias": "^1.8.11",
         "tsconfig-paths": "^4.2.0",
         "tsx": "^4.19.3",
-        "typescript": "^5",
+        "typescript": "^5.8.2",
         "webpack": "^5.97.1",
         "webpack-cli": "^6.0.1",
         "webpack-node-externals": "^3.0.0"
