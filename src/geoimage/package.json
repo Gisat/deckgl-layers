@@ -1,7 +1,6 @@
 {
     "name": "deckgl-layers-npm",
     "version": "0.1.0",
-    "private": true,
     "scripts": {
         "build": "webpack --config webpack.config.js"
     },
