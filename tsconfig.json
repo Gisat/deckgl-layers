@@ -22,7 +22,6 @@
     "paths": {
       "@app/*": ["./src/app/*"],
       "@features/*": ["./src/features/*"],
-      "@geoimage/*": ["./src/geoimage/*"],
       "@tests/*": ["./src/tests/*"],
     }
   },
