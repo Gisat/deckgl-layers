@@ -10,6 +10,7 @@
         "build:barrels": "barrelsby -c barrels.scripts.json",
         "build:styles": "node barrels.styles.mjs",
         "build:prebuild": "npm run build:barrels && npm run build:styles",
+        "build:dev": "npm run build:prebuild && rollup --config --watch",
         "build": "npm run build:prebuild && rollup --config"
     },
     "peerDependencies": {
@@ -19,10 +20,10 @@
         "@deck.gl/layers": "^9.0.33",
         "@deck.gl/mesh-layers": "^9.0.33",
         "@deck.gl/react": "^9.0.33",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
         "classnames": "^2.5.1",
-        "lodash": "^4.17.21"
+        "lodash": "^4.17.21",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^28.0.3",
@@ -36,6 +37,7 @@
         "@types/webpack": "^5.28.5",
         "barrelsby": "^2.8.1",
         "rollup": "^4.37.0",
+        "rollup-plugin-postcss": "^4.0.2",
         "ts-loader": "^9.5.2",
         "ts-node": "^10.9.2",
         "tsc-alias": "^1.8.11",
