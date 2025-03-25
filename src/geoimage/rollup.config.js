@@ -1,34 +1,34 @@
-import resolve from '@rollup/plugin-node-resolve';
-import typescript from '@rollup/plugin-typescript';
-import json from '@rollup/plugin-json';
-import commonjs from '@rollup/plugin-commonjs';
-import postcss from 'rollup-plugin-postcss';
+import resolve from '@rollup/plugin-node-resolve'; // Resolves node_modules imports
+import typescript from '@rollup/plugin-typescript'; // Compiles TypeScript files
+import json from '@rollup/plugin-json'; // Allows importing JSON files
+import commonjs from '@rollup/plugin-commonjs'; // Converts CommonJS modules to ES6
+import postcss from 'rollup-plugin-postcss'; // Processes CSS files
 
-import { createRequire } from 'module';
+import { createRequire } from 'module'; // Enables using require in ES modules
 
-const require = createRequire(import.meta.url);
-const pkg = require('./package.json');
+const require = createRequire(import.meta.url); // Creates a require function
+const pkg = require('./package.json'); // Loads package.json for configuration
 
 export default {
-  input: 'index.ts',
+  input: 'index.ts', // Entry point of the library
   output: [
-    { file: pkg.main, format: 'cjs', sourcemap: true },
-    { file: pkg.module, format: 'esm', sourcemap: true }
+    { file: pkg.main, format: 'cjs', sourcemap: true }, // CommonJS output
+    { file: pkg.module, format: 'esm', sourcemap: true } // ES module output
   ],
   external: [
-    ...Object.keys(pkg.peerDependencies || {}),
-    'react', 'react-dom'
+    ...Object.keys(pkg.peerDependencies || {}), // Excludes peer dependencies from the bundle
+    'react', 'react-dom' // Excludes React and ReactDOM
   ],
   plugins: [
-    json(),
+    json(), // Enables JSON imports
     postcss({
-      extract: true, // or false to inline styles
-      modules: true, // if you use CSS modules
-      minimize: true,
-      sourceMap: true
+      extract: true, // Extracts CSS into a separate file
+      modules: true, // Enables CSS modules
+      minimize: true, // Minifies CSS
+      sourceMap: true // Generates source maps for CSS
     }),
-    resolve({ extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx'] }),
-    commonjs(),
-    typescript({ tsconfig: './tsconfig.json' })
+    resolve({ extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx'] }), // Resolves file extensions
+    commonjs(), // Converts CommonJS to ES6
+    typescript({ tsconfig: './tsconfig.json' }) // Uses the specified TypeScript configuration
   ]
 };
