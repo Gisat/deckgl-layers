@@ -5,7 +5,7 @@ Folders:
 - app: NextJS route structure with demo presentations and data APIs
 - features: Components and logic used in demos, but not included in NPM
 - geoimage: Final NPM product
-- tests: Test scenarios for any peice of code.
+- tests: Test scenarios for any piece of code.
 
 
 ## Installation
