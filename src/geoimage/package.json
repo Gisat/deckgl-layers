@@ -1,21 +1,49 @@
 {
     "name": "deckgl-layers-npm",
     "version": "0.1.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "module": "dist/index.esm.js",
+    "styles": "dist/styles.css",
+    "type": "module",
     "scripts": {
-        "build": "webpack --config webpack.config.js"
+        "build:barrels": "barrelsby -c barrels.scripts.json",
+        "build:styles": "node barrels.styles.mjs",
+        "build:prebuild": "npm run build:barrels && npm run build:styles",
+        "build:dev": "npm run build:prebuild && rollup --config --watch",
+        "build": "npm run build:prebuild && rollup --config"
+    },
+    "peerDependencies": {
+        "@deck.gl/core": "^9.0.33",
+        "@deck.gl/extensions": "^9.0.33",
+        "@deck.gl/geo-layers": "^9.0.33",
+        "@deck.gl/layers": "^9.0.33",
+        "@deck.gl/mesh-layers": "^9.0.33",
+        "@deck.gl/react": "^9.0.33",
+        "classnames": "^2.5.1",
+        "lodash": "^4.17.21",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
     },
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.3",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "^16.0.1",
+        "@rollup/plugin-typescript": "^12.1.2",
         "@types/lodash": "^4.17.15",
-        "@types/node": "^20",
+        "@types/node": "^20.17.24",
         "@types/react": "^19",
         "@types/react-dom": "^19",
-        "typescript": "^5"
-    },
-    "dependencies": {
-        "lodash": "^4.17.21",
-        "webpack": "^5.97.1",
-        "webpack-cli": "^6.0.1",
-        "webpack-node-externals": "^3.0.0",
-        "ts-loader": "^9.5.2"
+        "@types/webpack": "^5.28.5",
+        "barrelsby": "^2.8.1",
+        "rollup": "^4.37.0",
+        "rollup-plugin-postcss": "^4.0.2",
+        "ts-loader": "^9.5.2",
+        "ts-node": "^10.9.2",
+        "tsc-alias": "^1.8.11",
+        "tsconfig-paths": "^4.2.0",
+        "tslib": "^2.8.1",
+        "tsx": "^4.19.3",
+        "typescript": "^5.8.2"
     }
 }

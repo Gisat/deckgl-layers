@@ -3,6 +3,10 @@
 .DS_Store
 /.vscode
 
+/dist
+index.ts
+styles.css
+
 
 # dependencies
 /node_modules
