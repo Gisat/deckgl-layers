@@ -12,12 +12,13 @@ export const CogMap = () => {
     ]
 
     return (
-        <section className="ptr-mapRender">
+        <section className="cog-map">
             <DeckGL
                 views={defaultMapView()}
                 initialViewState={defaultMapState()}
                 layers={layers}
-                style={{ position: "relative", width: "500px", height: "500px" }}
+                style={{ width: "100vw", height: "50vh", display: "flex" }}
+                controller={true}
             >
             </DeckGL>
 
