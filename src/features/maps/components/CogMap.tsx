@@ -1,3 +1,5 @@
+"use client"
+
 import React from "react";
 import { DeckGL } from "@deck.gl/react";
 import { defaultMapState, defaultMapView } from "../logic/map.defaults";
@@ -15,7 +17,7 @@ export const CogMap = () => {
                 views={defaultMapView()}
                 initialViewState={defaultMapState()}
                 layers={layers}
-                style={{ position: "relative", width: "500px", height: "500 px" }}
+                style={{ position: "relative", width: "500px", height: "500px" }}
             >
             </DeckGL>
 
