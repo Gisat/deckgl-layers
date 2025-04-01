@@ -12,10 +12,12 @@
  *          and a cleanup function to revoke the object URL when it is no longer needed.
  * @throws Will throw an error if the fetch operation fails with details of the failure
  */
-export const fetchForPublicImageSourceCOG = async (url: string) => {
+export const fetchForPublicImageSourceCOG = async (url: string, headers?: object) => {
     const response = await fetch(url, {
         method: "GET",
         headers: {
+            ...headers,
+            "Content-Type": "application/octet-stream",
             "Accept": "application/octet-stream",
         }
     });
