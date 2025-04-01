@@ -1,5 +1,6 @@
-.cog-map{
+.cog-map-wrapper {
     position: relative;
-    width: 100%;
-    height: 100%;
+    width: 100%;  /* Use 100% instead of 100vw to prevent horizontal scrollbar */
+    height: 70vh;
+    overflow: hidden;  /* Prevent any potential overflow */
 }
