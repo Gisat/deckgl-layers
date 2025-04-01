@@ -1,6 +1,6 @@
-.cog-map-wrapper {
+.dgl-MapWrapper {
     position: relative;
     width: 100%;  /* Use 100% instead of 100vw to prevent horizontal scrollbar */
-    height: 70vh;
+    height: 50vh;
     overflow: hidden;  /* Prevent any potential overflow */
 }
