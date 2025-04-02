@@ -11,6 +11,11 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "next": "15.2.4",
+    "@deck.gl/core": "^9.1.8",
+    "@deck.gl/extensions": "^9.1.8",
+    "@deck.gl/geo-layers": "^9.1.8",
+    "@deck.gl/layers": "^9.1.8",
+    "@deck.gl/react": "^9.1.8",
     "geoimage": "file:src/geoimage"
   },
   "devDependencies": {
