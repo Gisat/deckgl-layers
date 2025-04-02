@@ -17,6 +17,10 @@
       "paths": {
         "@geoimage/*": ["./src/*"] // Map module paths for cleaner imports
       },
+      "types": [
+        "node",
+        "jest"
+      ],
     },
     "include": ["**/*"], // Include all files in the project
     "exclude": ["node_modules", "dist"] // Exclude node_modules and output directory
