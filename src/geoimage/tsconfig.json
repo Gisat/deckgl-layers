@@ -1,27 +1,25 @@
 {
-    "compilerOptions": {
-      "jsx": "react", // Enable JSX syntax for React
-      "target": "ES2020", // Specify ECMAScript target version
-      "module": "ESNext", // Specify module code generation
-      "resolveJsonModule": true, // Allow importing JSON files
-      "moduleResolution": "bundler", // Use bundler-style module resolution
-      "skipLibCheck": true, // Skip type checking of declaration files
-      "strict": true, // Enable all strict type-checking options
-      "declaration": true, // Generate .d.ts files for TypeScript declarations
-      "declarationDir": "dist", // Specify output directory for declaration files
-      "outDir": "dist", // Specify output directory for compiled files
-      "noImplicitAny": false, // Allow variables with implicit 'any' type
-      "allowSyntheticDefaultImports": true, // Allow default imports from modules without default exports
-      "esModuleInterop": true, // Enable interoperability between CommonJS and ES Modules
-      "baseUrl": ".", // Base directory for resolving non-relative module names
-      "paths": {
-        "@geoimage/*": ["./src/*"] // Map module paths for cleaner imports
-      },
-      "types": [
-        "node",
-        "jest"
-      ],
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ESNext",
+    "resolveJsonModule": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationDir": "dist",
+    "outDir": "dist",
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "paths": {
+      "@geoimage/*": ["src/*"], 
+      "@test/*": ["tests/*"]
     },
-    "include": ["**/*"], // Include all files in the project
-    "exclude": ["node_modules", "dist"] // Exclude node_modules and output directory
-  }
+    "types": [
+      "node",
+      "jest"
+    ],
+  },
+  "include": ["**/*"],
+  "exclude": ["node_modules", "dist"]
+}

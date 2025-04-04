@@ -1,4 +1,4 @@
-import { fromUrl } from 'geotiff';
+import GeoTIFF from 'geotiff';
 import { CogLayerData } from '@geoimage/shared/types/models.cogs';
 
 /**
@@ -26,16 +26,14 @@ import { CogLayerData } from '@geoimage/shared/types/models.cogs';
  * // Access the raster data and geographic information
  * const { rasters, bbox, width, height } = cogData;
  */
-export const AnalyseCogFromUrl = async (url: string, options: {
+export const AnalyseCogFromUrl = async (cog: GeoTIFF, options: {
   interleave: boolean
   band: number
 } = { band: 0, interleave: false }): Promise<CogLayerData> => {
 
-  const tiff = await fromUrl(url)
-
   // Get the first image from the TIFF file or can be added index
   // we can have multiple images in a tiff file with different bands
-  const firstOfImagesInTiff = await tiff.getImage(options.band)
+  const firstOfImagesInTiff = await cog.getImage(options.band)
 
   // Get the rasters from the image
   // Notice: with { interleave: true }, 
