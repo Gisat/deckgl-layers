@@ -1,5 +1,37 @@
 import GeoTIFF from 'geotiff';
-import { CogLayerData } from '@geoimage/shared/types/models.cogs';
+
+    /**
+     * Interface representing the processed data from a COG (Cloud Optimized GeoTIFF) source
+     */
+    export interface CogLayerData {
+
+      /** COG zooms */
+      zooms: number;
+      /** Bounding box in [west, south, east, north] format */
+      bbox: [number, number, number, number];
+      /** Array of corner coordinates forming a closed polygon */
+      bounds: [number, number][];
+      /** Width of the image in pixels */
+      width: number;
+      /** Height of the image in pixels */
+      height: number;
+      /** Width of the image tile in pixels */
+      tileWidth: number;
+      /** Height of the image tile in pixels */
+      tileHeight: number;
+      /** Resolution in the X direction (degrees or units per pixel) */
+      resX: number;
+      /** Resolution in the Y direction (degrees or units per pixel, usually negative) */
+      resY: number;
+      /** Points representing the bounding box corners */
+      bboxPoints: {
+          west: number;
+          south: number;
+          east: number;
+          north: number;
+      };
+  }
+
 
 /**
  * Analyzes a Cloud Optimized GeoTIFF (COG) image from a URL and extracts its data.
@@ -11,35 +43,31 @@ import { CogLayerData } from '@geoimage/shared/types/models.cogs';
  *                             instead of separate arrays per band.
  * @param options.band - The band index to read from the TIFF. Default is 0.
  * 
- * @returns A Promise that resolves to a CogLayerData object containing:
- *   - bbox: Bounding box coordinates [west, south, east, north]
- *   - bounds: Array of coordinate pairs forming a closed polygon around the image
- *   - rasters: The pixel data from the image
- *   - width: Width of the image in pixels
- *   - height: Height of the image in pixels
- *   - resX: Resolution in the X direction (units per pixel)
- *   - resY: Resolution in the Y direction (units per pixel)
- *   - bboxPoints: Object with west, south, east, north coordinates
+ * @returns A Promise that resolves to a CogLayerData
  * 
  * @example
  * const cogData = await AnalyseCogFromUrl('https://example.com/sample.tif');
  * // Access the raster data and geographic information
  * const { rasters, bbox, width, height } = cogData;
  */
-export const AnalyseCogFromUrl = async (cog: GeoTIFF, options: {
-  interleave: boolean
-  band: number
-} = { band: 0, interleave: false }): Promise<CogLayerData> => {
+export const AnalyseCog = async (cog: GeoTIFF, options: {
+} = {}): Promise<CogLayerData> => {
+
+  // Get the number of images in the COG (each is a zoom level)
+  const zooms = await cog.getImageCount()
 
   // Get the first image from the TIFF file or can be added index
-  // we can have multiple images in a tiff file with different bands
-  const firstOfImagesInTiff = await cog.getImage(options.band)
+  // in COG each image is a zoom level, or sometimes it can be separated band
+  const firstOfImagesInTiff = await cog.getImage()
 
   // Get the rasters from the image
   // Notice: with { interleave: true }, 
   // instead of getting one array per band (e.g., [Red[], Green[], Blue[]]), 
   // you get a single typed array where pixels are like [R, G, B, R, G, B, ...].
-  const rasters = await firstOfImagesInTiff.readRasters({ interleave: options.interleave })
+  // const rasters = await firstOfImagesInTiff.readRasters({ 
+  //   interleave: options.interleave,
+
+  // })
   
   // Returns the top-left geographic coordinate (longitude, latitude or easting/northing depending on projection).
   // This is the "anchor point" for positioning the image on the map.
@@ -53,6 +81,10 @@ export const AnalyseCogFromUrl = async (cog: GeoTIFF, options: {
   // Returns the width and height of the image in pixels.
   const width = firstOfImagesInTiff.getWidth()
   const height = firstOfImagesInTiff.getHeight()
+
+  // tileSize is the size of each tile in pixels.
+  const tileWidth = firstOfImagesInTiff.getTileWidth()
+  const tileHeight = firstOfImagesInTiff.getTileHeight()
 
 
   // Convert bounds from array to object form
@@ -92,12 +124,14 @@ export const AnalyseCogFromUrl = async (cog: GeoTIFF, options: {
   const result: CogLayerData = {
     bbox,
     bounds,
-    rasters,
     width,
     height,
+    tileHeight,
+    tileWidth,
     resX,
     resY,
-    bboxPoints
+    bboxPoints,
+    zooms
   };
 
   return result
