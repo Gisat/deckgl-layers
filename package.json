@@ -2,6 +2,7 @@
   "name": "deckgl-layers",
   "version": "0.1.0",
   "scripts": {
+    "test:geoimage": "vitest --config src/geoimage/vitest.config.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
