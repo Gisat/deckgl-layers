@@ -1,4 +1,5 @@
 import GeoTIFF, { fromFile, fromUrl } from "geotiff";
+import { TileMagicXYZ } from "../tiles/models.tileMagic";
 
 interface CogZoom {
     zoom: number;
@@ -8,7 +9,8 @@ interface CogZoom {
     origin: [number, number, number];
     bbox: [number, number, number, number];
     resolution: [number, number, number];
-    // tileZoomLevel: number;
+    zoomResolutionMetersPerPixel: number;
+    tileZoomLevel: number;
 }
 
 export class CogImage {
@@ -24,83 +26,120 @@ export class CogImage {
     * zoom 2 is the second zoom level (quarter resolution)
     * and so on... 
     * */
-    numberOfZoomsInCog: number = 0;
+    numberOfZoomsInCog: number = undefined;
 
-    zoomMap: Map<number, CogZoom>;
+    zoomMap: Map<number, Partial<CogZoom>>;
 
     private constructor(tiff: GeoTIFF) {
         this.tiff = tiff;
         this.zoomMap = new Map();
-        this.initialize();
     }
 
-    private async initialize() {
-        this.numberOfZoomsInCog = await this.tiff.getImageCount();
+    async initialize() {
+        const zooms = await this.tiff.getImageCount();
+        let tileMagicXYZ: TileMagicXYZ
 
-        for (let cogZoomIndex = 0; cogZoomIndex < this.numberOfZoomsInCog; cogZoomIndex++) {
-            const cogLevelImage = await this.tiff.getImage(cogZoomIndex);
+        let mainResolutions: [number, number, number] = [0, 0, 0];
+        let mainOrigins: [number, number, number] = [0, 0, 0];
+        let mainBoundingBox: [number, number, number, number] = [0, 0, 0, 0];
+        let mainWidth: number = 0;
 
+        let resolutionPyramid: Map<number, number> = new Map();
+
+        for (let cogZoom = 0; cogZoom < zooms; cogZoom++) {
+
+            // read the COG image at the current zoom level
+            const cogLevelImage = await this.tiff.getImage(cogZoom);
+
+            // setup main image level properties
+            // at lower image levels the COG hasn't those values
+            const isMainImage = cogZoom === 0;
+
+            if (isMainImage) {
+                mainOrigins = cogLevelImage.getOrigin() as [number, number, number];
+                mainResolutions = cogLevelImage.getResolution() as [number, number, number];
+                mainBoundingBox = cogLevelImage.getBoundingBox() as [number, number, number, number];
+                mainWidth = cogLevelImage.getWidth();
+
+                resolutionPyramid = this.buildCogResolutionPyramid(mainResolutions[0], zooms);
+                tileMagicXYZ = new TileMagicXYZ(cogLevelImage.getTileWidth());
+            }
+
+            // get the tile width and height in pixels
             const [tileWidth, tileHeight] = [cogLevelImage.getTileWidth(), cogLevelImage.getTileHeight()];
 
+            // get the pixel width and height in pixels
             const [pixelWidth, pixelHeight] = [cogLevelImage.getWidth(), cogLevelImage.getHeight()];
 
-            const [originX, originY, originZ] = cogLevelImage.getOrigin()
-
-            const [resX, resY, resZ] = cogLevelImage.getResolution();
-
-            const [bboxWest, bboxSouth, bboxEast, bboxNorth] = cogLevelImage.getBoundingBox();
-
+            // get the number of tiles in the image
             const numberOfTilesX = Math.round(pixelWidth / tileWidth);
 
+            // get the number of tiles in the image
             const numberOfTilesY = Math.round(pixelHeight / tileHeight);
 
-            this.zoomMap.set(cogZoomIndex, {
-                zoom: cogZoomIndex,
-                pixelSize: [resX, resY],
+            // get resolution for this image level
+
+
+            // Similarly, we can calculate the origin and bounding box for this level if needed
+            // This is optional as we're using mainOrigins and mainBoundingBox currently
+
+            this.zoomMap.set(cogZoom, {
+                zoom: cogZoom,
+                pixelSize: [pixelWidth, pixelHeight],
                 tileSize: [tileWidth, tileHeight],
-                origin: [originX, originY, originZ],
-                bbox: [bboxWest, bboxSouth, bboxEast, bboxNorth],
                 numberOfTiles: [numberOfTilesX, numberOfTilesY],
-                resolution: [resX, resY, resZ]
+
+                // TODO: change
+                origin: mainOrigins,
+                resolution: mainResolutions,
+                bbox: mainBoundingBox,
+                zoomResolutionMetersPerPixel: resolutionPyramid.get(cogZoom),
+                tileZoomLevel: tileMagicXYZ.bestZoomLevelForResolution(resolutionPyramid.get(cogZoom)),
             });
 
         }
     }
 
-    *describeAllImages({ logToConsole = false }: { logToConsole: boolean }): Generator<CogZoom> {
-        for (const imageInCog of this.zoomMap.values()) {
-            
-            if (logToConsole)
-                console.log(`Cog Image at Zoom: ${imageInCog.zoom} - ${imageInCog.pixelSize} - ${imageInCog.tileSize} - ${imageInCog.numberOfTiles} - ${imageInCog.origin} - ${imageInCog.bbox} - ${imageInCog.resolution}`);
+    buildCogResolutionPyramid = (
+        levelZeroXResolution: number,
+        levels: number // total number of COG levels including level 0
+    ): Map<number, number> => {
+        const resolutionMap = new Map<number, number>();
 
-            yield {
-                zoom: imageInCog.zoom,
-                pixelSize: imageInCog.pixelSize,
-                tileSize: imageInCog.tileSize,
-                numberOfTiles: imageInCog.numberOfTiles,
-                origin: imageInCog.origin,
-                bbox: imageInCog.bbox,
-                resolution: imageInCog.resolution
-            };
+        for (let level = 0; level < levels; level++) {
+            const resolutionMetersPerPixel = +(levelZeroXResolution * Math.pow(2, level)).toFixed(5);
+            resolutionMap.set(level, resolutionMetersPerPixel);
         }
+
+        return resolutionMap;
+    };
+
+
+    bestCogLevelForResolution = (resolutionMetersPerPixels: number): number => {
+        const cogLevels = Array.from(this.zoomMap.keys());
+        const cogResolutions = Array.from(this.zoomMap.values()).map((cogLevel) => cogLevel.zoomResolutionMetersPerPixel);
+
+        // find the closest resolution to the requested resolution
+        const closestResolutionIndex = cogResolutions.reduce((previousResolution, currentResolution, index) => {
+            const hasThisCogLevelCloserResolution = Math.abs(currentResolution - resolutionMetersPerPixels) < Math.abs(cogResolutions[previousResolution] - resolutionMetersPerPixels)
+            return hasThisCogLevelCloserResolution ? index : previousResolution;
+        }, 0);
+
+        return cogLevels[closestResolutionIndex];
     }
-
-    // /**
-    //  * Get the tile size in pixels for a given tile zoom level.
-    //  * @param tileZoomLevel The zoom level of the XYZ indexing tile.
-    //  * @returns The tile size in pixels.
-    //  */
-    // imageForTileZoomLevel = (tileZoomLevel: number) => {
-
-    // }
 
     static async fromUrl(url: string | URL) {
         const tiff = await fromUrl(url instanceof URL ? url.toString() : url);
-        return new CogImage(tiff);
+        const cogInstance = new CogImage(tiff);
+        await cogInstance.initialize();
+        return cogInstance;
     }
+
     static async fromFile(path: string) {
         const tiff = await fromFile(path);
-        return new CogImage(tiff);
+        const cogInstance = new CogImage(tiff);
+        await cogInstance.initialize();
+        return cogInstance;
     }
 
 }
