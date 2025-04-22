@@ -1,6 +1,6 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
-import { AnalyseCog } from '@geoimage/shared/cogs/analysis.cog';
+import { AnalyseCog } from '@geoimage/cogs/analysis.cog';
 import { cogFromUrl } from '@geoimage/shared/integration/sources.read';
 
 interface CogTileLayerProps {
