@@ -1,7 +1,7 @@
 import GeoTIFF, { fromFile, fromUrl } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
-import { boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
+import { boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
 
 /**
  * Information about COG image zoom levels
@@ -144,25 +144,6 @@ export class CogImage {
         return resolutionMap;
     };
 
-
-    // bestCogLevelForResolution = (resolutionMetersPerPixels: number) => {
-    //     const cogResolutions = Array.from(this.zoomMap.values()).map((cogLevel) => cogLevel.zoomResolutionMetersPerPixel);
-
-    //     // find the closest resolution to the requested resolution
-    //     const closestResolutionIndex = cogResolutions.reduce((previousResolution, currentResolution, index) => {
-    //         const hasThisCogLevelCloserResolution = Math.abs(currentResolution - resolutionMetersPerPixels) < Math.abs(cogResolutions[previousResolution] - resolutionMetersPerPixels)
-    //         return hasThisCogLevelCloserResolution ? index : previousResolution;
-    //     }, 0);
-
-    //     const result = {
-    //         imageLevel: closestResolutionIndex,
-    //         resolution: cogResolutions[closestResolutionIndex],
-    //     }
-
-    //     return result;
-    // }
-
-
     /**
      * Finds the best COG zoom level based on a given resolution in meters per pixel.
      * 
@@ -176,7 +157,7 @@ export class CogImage {
      * @returns {number} result.resolution - The resolution of the best zoom level in meters per pixel
      */
     bestZoomLevelForResolution = (resolutionMetersPerPixels: number) => {
-        
+
         // list of all COG level resolutions from the zoomMap
         const cogResolutions = Array.from(this.zoomMap.values()).map((cogLevel) => cogLevel.zoomResolutionMetersPerPixel);
 
@@ -217,23 +198,37 @@ export class CogImage {
         return response
     }
 
-    imageForXYZ = async ([x,y,z]: [number, number, number], tileSize = 256, xyzMaxZoom = 26) => {
-        
+    imageForXYZ = async ([x, y, z]: [number, number, number], tileSize = 256, xyzMaxZoom = 26) => {
+
         // prepare XYZ tile helper
         const xyzHelper = new TileMagicXYZ(tileSize, xyzMaxZoom);
         const xyzBoundingBox = xyzHelper.tileXYToMercatorBBox([x, y, z]);
 
         // get the COG level for the given XYZ tile
         const cogImageLevel = this.tileZoomToCogLevelMap.get(z);
+        const imageZoomInfo = this.zoomMap.get(cogImageLevel);
+        const imageBoundingBox = imageZoomInfo.bbox;
+
+        // check if the COG image bounding box overlaps with the XYZ tile bounding box
+        // if not, return null
+        // we need to o this as the Geotiff returns a rester always, but not with values
+        const bboxOverlap = boundsOverlapCheck(xyzBoundingBox, imageBoundingBox);
+        if (!bboxOverlap) {
+            return null
+        }
+
+        // get the COG image at the given level
         const image = await this.tiff.getImage(cogImageLevel);
 
-        const imageBounds = boundsToBbox(xyzBoundingBox)
+        // get the bounding box of the rendered area
+        const requiredAreaFromImage = boundsToBbox(xyzBoundingBox)
 
         const rasters = await image.readRasters({
-            bbox: imageBounds,
+            bbox: requiredAreaFromImage,
             // TODO: bands etc.
         })
 
+        // get the pixel size of the image
         return rasters
     }
 

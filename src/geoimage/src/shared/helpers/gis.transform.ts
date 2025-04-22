@@ -29,3 +29,22 @@ export const boundsToBbox = (bounds: BoundingBox): TupleBBOX => {
         bounds.north
     ]
 }
+
+
+export const boundsOverlapCheck = (bboxA: TupleBBOX | BoundingBox, bboxB: TupleBBOX | BoundingBox) => {
+
+    // Convert to TupleBBOX if necessary
+    if (!Array.isArray(bboxA)) 
+        bboxA = boundsToBbox(bboxA);
+
+    if (!Array.isArray(bboxB))
+        bboxB = boundsToBbox(bboxB);
+
+    // Check if the bounding boxes overlap
+    return (
+      bboxA[0] < bboxB[2] &&  // A.minX < B.maxX
+      bboxA[2] > bboxB[0] &&  // A.maxX > B.minX
+      bboxA[1] < bboxB[3] &&  // A.minY < B.maxY
+      bboxA[3] > bboxB[1]     // A.maxY > B.minY
+    );
+  }
