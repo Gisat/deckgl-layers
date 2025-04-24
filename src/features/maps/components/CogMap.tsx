@@ -4,6 +4,7 @@ import React from "react";
 import { DeckGL } from "@deck.gl/react";
 import { defaultMapState, defaultMapView } from "../logic/map.defaults";
 import { createOpenstreetMap } from "../logic/layers.basemaps";
+import { createCogLayer } from "@geoimage/layers/tile.cog"
 import "../maps.css";
 
 /**
@@ -12,11 +13,18 @@ import "../maps.css";
  * It's the DeckGL map wrapper with dynamic DeckGL map size
  * @returns {JSX.Element} Wrapped map component
  */
-export const CogMap = () => {
+export const CogMap = async () => {
     // list of layers to be rendered
     // TODO: Now its harcoded, but later might be dynamic
+
+    const cogImage = await createCogLayer({
+        id: "cog-layer", 
+        url: "https://gisat-gis.eu-central-1.linodeobjects.com/eman/versions/v3/DEM/DEM_COP30_float32_wgs84_deflate_cog_float32.tif"
+    })
+
     const layers = [
-        createOpenstreetMap()
+        createOpenstreetMap(),
+        cogImage
     ];
 
     return (

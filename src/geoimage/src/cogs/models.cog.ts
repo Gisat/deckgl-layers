@@ -2,7 +2,7 @@ import GeoTIFF, { fromFile, fromUrl, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
 import { boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
-import { Nullable, NullablePromise } from "@geoimage/shared/helpers/code.types";
+import { NullablePromise } from "@geoimage/shared/helpers/code.types";
 
 /**
  * Information about COG image zoom levels
@@ -55,6 +55,23 @@ export class CogImage {
         this.tileZoomToCogLevelMap = new Map();
     }
 
+    /**
+     * Initializes the COG (Cloud Optimized GeoTIFF) image processing by iterating through
+     * all zoom levels of the TIFF file and setting up the necessary metadata for each level.
+     * 
+     * This method performs the following tasks:
+     * - Reads the number of zoom levels in the TIFF file.
+     * - Extracts and sets the main image properties (origin, resolution, bounding box) from the highest resolution level.
+     * - Builds a resolution pyramid for the COG levels.
+     * - Calculates tile and pixel dimensions, number of tiles, and resolutions for each zoom level.
+     * - Maps COG zoom levels to XYZ tile zoom levels for compatibility with tile-based systems.
+     * - Stores metadata for each zoom level in `zoomMap` and maps XYZ zoom levels to COG levels in `tileZoomToCogLevelMap`.
+     * 
+     * @async
+     * @returns {Promise<void>} Resolves when the initialization process is complete.
+     * 
+     * @throws {Error} If there is an issue reading the TIFF file or processing the zoom levels.
+     */
     async initialize() {
         const zooms = await this.tiff.getImageCount();
         let tileMagicXYZ: TileMagicXYZ
@@ -70,16 +87,19 @@ export class CogImage {
             // read the COG image at the current zoom level
             const cogLevelImage = await this.tiff.getImage(cogZoom);
 
-            // setup main image level properties
+            // setup main image level properties (COG level 0)
             // at lower image levels the COG hasn't those values
-            const isMainImage = cogZoom === 0;
-
-            if (isMainImage) {
+            if (cogZoom === 0) {
+                
+                // get the main image properties
                 mainOrigins = cogLevelImage.getOrigin() as [number, number, number];
                 mainResolutions = cogLevelImage.getResolution() as [number, number, number];
                 mainBoundingBox = cogLevelImage.getBoundingBox() as [number, number, number, number];
 
+                // build the resolution pyramid for the COG levels
                 resolutionPyramid = CogImage.buildCogResolutionPyramid(mainResolutions[0], zooms);
+
+                // initialise XYZ tile helper
                 tileMagicXYZ = new TileMagicXYZ(cogLevelImage.getTileWidth());
             }
 
@@ -138,7 +158,7 @@ export class CogImage {
         const resolutionMap = new Map<number, number>();
 
         for (let level = 0; level < levels; level++) {
-            const resolutionMetersPerPixel = +(levelZeroXResolution * Math.pow(2, level)).toFixed(5);
+            const resolutionMetersPerPixel = +(levelZeroXResolution * Math.pow(2, level)).toFixed(4);
             resolutionMap.set(level, resolutionMetersPerPixel);
         }
 
@@ -199,6 +219,22 @@ export class CogImage {
         return response
     }
 
+    /**
+     * Asynchronously retrieves raster data for a given XYZ tile from a Cloud Optimized GeoTIFF (COG).
+     *
+     * @param xyz - A tuple containing the X, Y, and Z coordinates of the XYZ tile.
+     * @param tileSize - The size of the tile in pixels. Defaults to 256.
+     * @param xyzMaxZoom - The maximum zoom level for the XYZ tile system. Defaults to 26.
+     * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified tile,
+     *          or `null` if the tile does not overlap with the COG image bounding box or no raster data is available.
+     *
+     * @remarks
+     * - This function uses a helper class (`TileMagicXYZ`) to calculate the bounding box of the XYZ tile in Mercator projection.
+     * - It determines the appropriate COG image level based on the XYZ zoom level using a mapping.
+     * - If the bounding box of the XYZ tile does not overlap with the COG image bounding box, the function returns `null`.
+     * - The function reads raster data from the COG image for the overlapping area and returns it.
+     * - If no raster data is available, the function returns `null`.
+     */
     imageForXYZ = async ([x, y, z]: [number, number, number], tileSize = 256, xyzMaxZoom = 26): NullablePromise<ReadRasterResult> => {
 
         // prepare XYZ tile helper
@@ -239,6 +275,17 @@ export class CogImage {
         return rasters
     }
 
+    /**
+     * Creates a new instance of `CogImage` from a given URL.
+     *
+     * This method fetches a Cloud Optimized GeoTIFF (COG) from the specified URL,
+     * initializes it, and returns an instance of `CogImage`.
+     *
+     * @param url - The URL or string representing the location of the COG file.
+     *              If a `URL` object is provided, it will be converted to a string.
+     * @returns A promise that resolves to an initialized `CogImage` instance.
+     * @throws Will throw an error if the URL is invalid or the COG file cannot be fetched or initialized.
+     */
     static async fromUrl(url: string | URL) {
         const tiff = await fromUrl(url instanceof URL ? url.toString() : url);
         const cogInstance = new CogImage(tiff);
@@ -246,6 +293,13 @@ export class CogImage {
         return cogInstance;
     }
 
+    /**
+     * Creates an instance of `CogImage` from a given file path.
+     *
+     * @param path - The file path to the COG (Cloud Optimized GeoTIFF) file.
+     * @returns A promise that resolves to an initialized `CogImage` instance.
+     * @throws Will throw an error if the file cannot be read or the initialization fails.
+     */
     static async fromFile(path: string) {
         const tiff = await fromFile(path);
         const cogInstance = new CogImage(tiff);

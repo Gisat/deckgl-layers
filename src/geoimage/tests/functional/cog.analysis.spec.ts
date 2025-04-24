@@ -1,22 +1,11 @@
-import { cogFromFile, cogFromUrl } from '@geoimage/shared/integration/sources.read';
-import { beforeAll, describe, expect, it } from 'vitest';
-import { useTestCogFile, useTestCogUrl } from '@test/tools/fixtures.cogs';
-import GeoTIFF from 'geotiff';
+import { useTestCogUrl } from '@test/tools/fixtures.cogs';
 import { CogImage } from '@geoimage/cogs/models.cog';
 import { TileMagicXYZ } from '@geoimage/tiles/models.tileMagic';
-
-let testCogFile: GeoTIFF
-let testCogSource: GeoTIFF
 
 
 describe('COG and Tiles loading', () => {
 
-    beforeAll(async () => {
-        testCogFile = await cogFromFile(useTestCogFile())
-        testCogSource = await cogFromUrl(useTestCogUrl())
-    });
-
-    test('XYZ Tile zoom matching', async () => {
+    test('Resolutions mach with XYZ zoom resolutions', async () => {
         const checkedResolutions = [
             156500,
             78200,
@@ -33,7 +22,7 @@ describe('COG and Tiles loading', () => {
         expect(check).toEqual(expectedZoomLevels)
     });
 
-    test("COG to XYZ resolution matching", async () => {
+    test("COG resolution match with XYZ tiles resolution", async () => {
 
         console.log("---Cog to XYZ resolution matching---")
 
@@ -49,17 +38,19 @@ describe('COG and Tiles loading', () => {
         const {zoomLevel, resolution} = xyz.bestZoomLevelForResolution(cogLevelResolution)
         console.log("XYZ Level for cog", zoomLevel)
         console.log("XYZ Resolution for cog", resolution)
+
+        expect(cogLevel).to.be.lt(zoomLevel)
+        expect(cogLevelResolution).toEqual(resolution)
     });
 
-    test("XYZ to COG resolution matching", async () => {
+    test("XYZ resolutuons match with COG level", async () => {
         console.log("---XYZ to Cog resolution matching---")
 
         const COG = await CogImage.fromUrl(useTestCogUrl());
         const xyz = new TileMagicXYZ(256, 22)
 
         const xyzLevel = 10
-        const xyzResolution = xyz.resolutionForZoomLevel(xyzLevel)
-        
+        const xyzResolution = xyz.tileZoomResolutionMap.get(xyzLevel)
         
         const {resolution: cogResoluion, zoomLevel: imageLevel} = COG.bestZoomLevelForResolution(xyzResolution)
 
@@ -68,6 +59,8 @@ describe('COG and Tiles loading', () => {
         console.log("COG Level", imageLevel)
         console.log("COG Resolution", cogResoluion)
 
+        expect(xyzLevel).to.be.gt(imageLevel)
+        expect(xyzResolution).toEqual(cogResoluion)
     });
 
     test("XYZ indexes to BBOX", async () => {

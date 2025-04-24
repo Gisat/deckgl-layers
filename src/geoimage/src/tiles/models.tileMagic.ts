@@ -3,6 +3,9 @@ import { MERCATOR_ZERO_256_RESOLUTION } from "../shared/helpers/gis.mercator";
 
 export class TileMagicXYZ {
 
+    /**
+     * The tile resolution map for different zoom levels of XYZ tiles
+     */
     readonly tileZoomResolutionMap: Map<number, number> = new Map<number, number>();
 
     constructor(readonly tileSize: number = 256, readonly zooms: number = 22) {
@@ -33,24 +36,27 @@ export class TileMagicXYZ {
         const baseResolution = MERCATOR_ZERO_256_RESOLUTION * (256 / tileSize);
 
         for (let zoom = 0; zoom <= zooms; zoom++) {
-            const resolution = +(baseResolution / Math.pow(2, zoom)).toFixed(5);
+            const resolution = +(baseResolution / Math.pow(2, zoom)).toFixed(4);
             tileZoomResolutionMap.set(zoom, resolution);
         }
 
         return tileZoomResolutionMap;
     };
 
-    resolutionForZoomLevel = (zoomLevel: number): number => {
-        if (this.tileZoomResolutionMap.has(zoomLevel)) {
-            return this.tileZoomResolutionMap.get(zoomLevel);
-        } else {
-            throw new Error(`Zoom level ${zoomLevel} not found in tile zoom resolution map.`);
-        }
-    }
-
+    /**
+     * Determines the best zoom level and its corresponding resolution for a given resolution in meters per pixel.
+     *
+     * @param resolutionMetersPerPixels - The target resolution in meters per pixel.
+     * @returns An object containing:
+     *   - `zoomLevel`: The index of the zoom level with the closest resolution.
+     *   - `resolution`: The resolution value at the determined zoom level.
+     */
     bestZoomLevelForResolution = (resolutionMetersPerPixels: number) => {
+
+        // resolution for each zoom level
         const tileZoomLevelResolutions = Array.from(this.tileZoomResolutionMap.values())
 
+        // find the best XYZ tile zoom index for provided resolution
         let bestResolutionIndex = 0;
 
         for (let i = 0; i < tileZoomLevelResolutions.length; i++) {

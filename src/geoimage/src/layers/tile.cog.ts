@@ -19,6 +19,38 @@ const LAYER_DEFAULTS = {
 }
 
 
+/**
+ * Asynchronously creates a COG (Cloud Optimized GeoTIFF) tile layer for use with Deck.gl.
+ *
+ * This function loads a COG image from the provided URL and defines a `TileLayer` 
+ * that fetches raster data for individual tiles and renders them using a `BitmapLayer`.
+ *
+ * @param props - The properties required to configure the COG layer.
+ * @param props.url - The URL of the COG image to load.
+ * @param props.id - A unique identifier for the layer.
+ * @param props.tileSize - The size of each tile in pixels. Defaults to `LAYER_DEFAULTS.tileSize`.
+ * @param props.minZoom - The minimum zoom level for the layer. Defaults to `LAYER_DEFAULTS.minZoom`.
+ * @param props.maxZoom - The maximum zoom level for the layer. Defaults to `LAYER_DEFAULTS.maxZoom`.
+ *
+ * @returns A promise that resolves to a configured `TileLayer` instance.
+ *
+ * @remarks
+ * - The `getTileData` function fetches raster data for each tile based on its coordinates.
+ * - The `renderSubLayers` function converts raster data into an `ImageBitmap` or `ImageData` 
+ *   and renders it using a `BitmapLayer`.
+ * - If raster data or zoom information is unavailable for a tile, it returns `null`.
+ *
+ * @example
+ * ```typescript
+ * const layer = await createCogLayer({
+ *   url: 'https://example.com/cog.tif',
+ *   id: 'my-cog-layer',
+ *   tileSize: 256,
+ *   minZoom: 0,
+ *   maxZoom: 20
+ * });
+ * ```
+ */
 export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
 
   // Load the COG image from the URL destination
@@ -30,8 +62,8 @@ export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
     // name of the layer
     id: props.id,
 
-    // source of the tile data
-    data: props.url,
+    // // source of the tile data
+    // data: props.url,
 
     //size of the tile
     tileSize: props.tileSize ?? LAYER_DEFAULTS.tileSize,
