@@ -7,6 +7,8 @@ import { createOpenstreetMap } from "../logic/layers.basemaps";
 import "../maps.css";
 import { createCogLayer } from "@geoimage/layers/tile.cog";
 
+const useTestCogUrl = () => "https://gisat-gis.eu-central-1.linodeobjects.com/eman/versions/v3/DEM/DEM_COP30_float32_wgs84_deflate_cog_float32.tif"
+
 /**
  * CogMap map component (client side)
  * This component is used to render the map with DeckGL
@@ -19,7 +21,7 @@ export const CogMap = async () => {
 
     const cogImage = await createCogLayer({
         id: "cog-layer", 
-        url: "https://gisat-gis.eu-central-1.linodeobjects.com/eman/versions/v3/DEM/DEM_COP30_float32_wgs84_deflate_cog_float32.tif"
+        url: useTestCogUrl()
     })
 
     const layers = [

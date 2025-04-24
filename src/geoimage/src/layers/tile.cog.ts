@@ -75,50 +75,51 @@ export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
     // How to get the data for each tile
     getTileData: async (tile) => {
 
-      const { index: { x, y, z } } = tile;
+      try {
+        const { index: { x, y, z } } = tile;
 
-      // Fetch raster data for the given tile coordinates
-      const rasterResults: Nullable<ReadRasterResult> = await cog.imageForXYZ([x, y, z]);
-      const cogZoomInfo = cog.zoomMap.get(z);
+        // Fetch raster data for the given tile coordinates
+        const rasterResults: Nullable<ReadRasterResult> = await cog.imageForXYZ([x, y, z]);
+        const cogZoomInfo = cog.zoomMap.get(z);
 
-      if (!cogZoomInfo) {
+        if (!cogZoomInfo) {
+          return null;
+        }
+
+        const [width, height] = cogZoomInfo.pixelSize
+
+        if (!rasterResults) {
+          return null;
+        }
+
+        // Convert raw raster data into an ImageBitmap or ImageData
+        const imageData = new ImageData(new Uint8ClampedArray(rasterResults[0] as ArrayLike<number>), width, height);
+
+        const bitmap = await createImageBitmap(imageData); // optional: wrap in async
+
+
+        return {
+          data: bitmap
+        };
+      } catch (error) {
+        console.error('Error fetching tile data:', error);
         return null;
       }
-
-      const [width, height] = cogZoomInfo.pixelSize
-
-      if (!rasterResults) {
-        return null;
-      }
-
-      return {
-        data: rasterResults[0],
-        width,
-        height
-
-      };
     },
 
     renderSubLayers: (props) => {
       const {
         id,
-        tile: { bbox },
-        data: { data, width, height },
-
+        data,
       } = props;
 
-      if (!data) return null;
+      console.log('Tile data:', data);
 
-
-      // Convert raw raster data into an ImageBitmap or ImageData
-      const imageData = new ImageData(new Uint8ClampedArray(data), width, height);
-
-      const bitmap = createImageBitmap(imageData); // optional: wrap in async
-
-      return new BitmapLayer({
-        id: `tile-bitmap-${id}`,
-        image: bitmap
-      });
+      if (data)
+        return new BitmapLayer({
+          id: `tile-bitmap-${id}`,
+          image: data
+        });
     }
   });
 
