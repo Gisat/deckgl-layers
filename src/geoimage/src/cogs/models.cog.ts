@@ -1,7 +1,8 @@
-import GeoTIFF, { fromFile, fromUrl } from "geotiff";
+import GeoTIFF, { fromFile, fromUrl, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
 import { boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
+import { Nullable, NullablePromise } from "@geoimage/shared/helpers/code.types";
 
 /**
  * Information about COG image zoom levels
@@ -198,7 +199,7 @@ export class CogImage {
         return response
     }
 
-    imageForXYZ = async ([x, y, z]: [number, number, number], tileSize = 256, xyzMaxZoom = 26) => {
+    imageForXYZ = async ([x, y, z]: [number, number, number], tileSize = 256, xyzMaxZoom = 26): NullablePromise<ReadRasterResult> => {
 
         // prepare XYZ tile helper
         const xyzHelper = new TileMagicXYZ(tileSize, xyzMaxZoom);
@@ -213,6 +214,7 @@ export class CogImage {
         // if not, return null
         // we need to o this as the Geotiff returns a rester always, but not with values
         const bboxOverlap = boundsOverlapCheck(xyzBoundingBox, imageBoundingBox);
+        
         if (!bboxOverlap) {
             return null
         }
@@ -228,7 +230,12 @@ export class CogImage {
             // TODO: bands etc.
         })
 
-        // get the pixel size of the image
+        // no rasters mean null return
+        if (!rasters) {
+            return null
+        }
+
+        // return the rasters
         return rasters
     }
 
