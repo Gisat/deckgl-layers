@@ -6,7 +6,7 @@ import { ReadRasterResult } from 'geotiff';
 
 interface CogLayerProps {
   id: string;
-  url: string;
+  cogImage: CogImage;
   tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
@@ -51,45 +51,43 @@ const LAYER_DEFAULTS = {
  * });
  * ```
  */
-export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
+export const createCogLayer = ({cogImage, id, tileSize, maxZoom, minZoom}: CogLayerProps): TileLayer => {
 
-  // Define the tile layer
-  const layer = new TileLayer({
+  return new TileLayer({
 
     // name of the layer
-    id: props.id,
+    id: id,
 
     // // source of the tile data
-    // data: props.url,
+    // data: url,
 
     //size of the tile
-    tileSize: props.tileSize ?? LAYER_DEFAULTS.tileSize,
+    tileSize: tileSize ?? LAYER_DEFAULTS.tileSize,
 
     // Viewport/zoom range
-    minZoom: props.minZoom ?? LAYER_DEFAULTS.minZoom,
-    maxZoom: props.maxZoom ?? LAYER_DEFAULTS.maxZoom,
+    minZoom: minZoom ?? LAYER_DEFAULTS.minZoom,
+    maxZoom: maxZoom ?? LAYER_DEFAULTS.maxZoom,
 
     // How to get the data for each tile
     getTileData: async (tile) => {
 
       try {
-        // Load the COG image from the URL destination
-        const cog = await CogImage.fromUrl(props.url);
-
 
         const { index: { x, y, z } } = tile;
 
         // Fetch raster data for the given tile coordinates
-        const rasterResults: Nullable<ReadRasterResult> = await cog.imageForXYZ([x, y, z]);
-        const cogZoomInfo = cog.zoomMap.get(z);
+        const rasterResults: Nullable<ReadRasterResult> = await cogImage.imageForXYZ([x, y, z]);
+        const cogZoomInfo = cogImage.zoomMap.get(z);
 
         if (!cogZoomInfo) {
+          console.error('No zoom information available for tile:', tile);
           return null;
         }
 
         const [width, height] = cogZoomInfo.pixelSize
 
         if (!rasterResults) {
+          console.error('No raster data available for tile:', tile);
           return null;
         }
 
@@ -97,7 +95,6 @@ export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
         const imageData = new ImageData(new Uint8ClampedArray(rasterResults[0] as ArrayLike<number>), width, height);
 
         const bitmap = await createImageBitmap(imageData); // optional: wrap in async
-
 
         return {
           data: bitmap
@@ -123,8 +120,6 @@ export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
         });
     }
   });
-
-  return layer;
 }
 
 

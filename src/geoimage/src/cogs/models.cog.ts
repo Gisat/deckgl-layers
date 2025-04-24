@@ -243,23 +243,25 @@ export class CogImage {
 
         // get the COG level for the given XYZ tile
         const cogImageLevel = this.tileZoomToCogLevelMap.get(z);
-        const imageZoomInfo = this.zoomMap.get(cogImageLevel);
-        const imageBoundingBox = imageZoomInfo.bbox;
+        // const imageZoomInfo = this.zoomMap.get(cogImageLevel);
+        // const imageBoundingBox = imageZoomInfo.bbox;
 
-        // check if the COG image bounding box overlaps with the XYZ tile bounding box
-        // if not, return null
-        // we need to o this as the Geotiff returns a rester always, but not with values
-        const bboxOverlap = boundsOverlapCheck(xyzBoundingBox, imageBoundingBox);
+        // // check if the COG image bounding box overlaps with the XYZ tile bounding box
+        // // if not, return null
+        // // we need to o this as the Geotiff returns a rester always, but not with values
+        // const bboxOverlap = boundsOverlapCheck(xyzBoundingBox, imageBoundingBox);
         
-        if (!bboxOverlap) {
-            return null
-        }
+        // if (!bboxOverlap) {
+        //     return null
+        // }
 
         // get the COG image at the given level
         const image = await this.tiff.getImage(cogImageLevel);
 
         // get the bounding box of the rendered area
         const requiredAreaFromImage = boundsToBbox(xyzBoundingBox)
+
+        console.log("requiredAreaFromImage", requiredAreaFromImage);
 
         const rasters = await image.readRasters({
             bbox: requiredAreaFromImage,
