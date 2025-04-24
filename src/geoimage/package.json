@@ -7,7 +7,6 @@
     "styles": "dist/styles.css",
     "type": "module",
     "scripts": {
-        "test": "vitest --config vitest.config.ts",
         "build:barrels": "barrelsby -c barrels.scripts.json",
         "build:styles": "node barrels.styles.mjs",
         "build:prebuild": "npm run build:barrels && npm run build:styles",

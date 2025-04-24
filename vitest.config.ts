@@ -10,6 +10,6 @@ export default defineConfig({
         include: ['**/*.test.ts', '**/*.spec.ts'],
         exclude: ['**/node_modules/**', '**/dist/**'],
         testTimeout: 10000,
-        dir: './tests',
+        dir: './src/geoimage/tests',
     },
 });

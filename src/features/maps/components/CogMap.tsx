@@ -4,8 +4,8 @@ import React from "react";
 import { DeckGL } from "@deck.gl/react";
 import { defaultMapState, defaultMapView } from "../logic/map.defaults";
 import { createOpenstreetMap } from "../logic/layers.basemaps";
-import { createCogLayer } from "@geoimage/layers/tile.cog"
 import "../maps.css";
+import { createCogLayer } from "@geoimage/layers/tile.cog";
 
 /**
  * CogMap map component (client side)
