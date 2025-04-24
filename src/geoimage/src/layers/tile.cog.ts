@@ -1,10 +1,8 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
 import { CogImage } from '@geoimage/cogs/models.cog';
-import { Nullable } from '@geoimage/shared/helpers/code.types';
 import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
 import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
-import { ReadRasterResult } from 'geotiff';
 
 interface CogLayerProps {
   id: string;
@@ -82,9 +80,16 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
         const { bbox: bboxMercator } = convertBoundsToMercator(webProjectionBounds as BoundingBox)
 
 
+        console.log("BBOX MERCATOR", bboxMercator);
+
         // Fetch raster data for the given tile coordinates
-        const rasterResults: Nullable<ReadRasterResult> = await cogImage.imageByBoundsForXYZ(z, bboxMercator);
-        const cogZoomInfo = cogImage.mapCogImageByLevelIndex.get(z);
+        const rasterResults = await cogImage.imageByBoundsForXYZ(z, bboxMercator);
+        if (!rasterResults) {
+          console.error('No raster data available for tile:', tile);
+          return null;
+        }
+
+        const cogZoomInfo = cogImage.mapCogImageByTileZoom.get(z);
 
         if (!cogZoomInfo) {
           console.error('No zoom information available for tile:', tile);
@@ -93,15 +98,21 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
 
         const [width, height] = cogZoomInfo.pixelSize
 
-        if (!rasterResults) {
-          console.error('No raster data available for tile:', tile);
-          return null;
+        // Convert raw raster data into an ImageBitmap or ImageData
+        console.log('Raster results:', rasterResults);
+        const pixelArray = new Uint8ClampedArray(rasterResults[1] as ArrayLike<number>);
+        const expectedLength = width * height * 4;
+
+        if (pixelArray.length !== expectedLength) {
+          console.warn(`Raster data length (${pixelArray.length}) does not match expected length (${expectedLength}). Padding with zeros.`);
+          const paddedArray = new Uint8ClampedArray(expectedLength);
+          paddedArray.set(pixelArray.subarray(0, Math.min(pixelArray.length, expectedLength)));
+          pixelArray.set(paddedArray);
         }
 
-        // Convert raw raster data into an ImageBitmap or ImageData
-        const imageData = new ImageData(new Uint8ClampedArray(rasterResults[0] as ArrayLike<number>), width, height);
+        const imageData = new ImageData(pixelArray, width, height);
 
-        const bitmap = await createImageBitmap(imageData); // optional: wrap in async
+        const bitmap = await createImageBitmap(imageData);
 
         return {
           data: bitmap
