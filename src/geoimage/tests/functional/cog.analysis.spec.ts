@@ -97,9 +97,25 @@ describe('COG and Tiles loading', () => {
 
         const COG = await CogImage.fromUrl(useTestCogUrl());
 
-        const rasters = await COG.imageForXYZ([46, 29, 6])
+        const rasters = await COG.imageForXYZ([44, 24, 6]);
 
-        console.log("COG BBOX", rasters.length)
+        if (!rasters) {
+            throw new Error("No rasters found for the given XYZ coordinates");
+        }
+
+        console.log("COG BBOX", rasters.length);
+
+        expect(rasters.length).toBeGreaterThan(0);
+    });
+    
+    test("COG Rasters miss XYZ coordinates", async () => {
+        console.log("---COG Rasters---")
+
+        const COG = await CogImage.fromUrl(useTestCogUrl());
+
+        const rasters = await COG.imageForXYZ([43, 20, 6]);
+
+        expect(rasters).toEqual(null)
     });
 
 });
