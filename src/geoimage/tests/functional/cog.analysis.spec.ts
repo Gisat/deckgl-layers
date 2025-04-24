@@ -28,7 +28,7 @@ describe('COG and Tiles loading', () => {
 
         const COG = await CogImage.fromUrl(useTestCogUrl());
         const cogLevel = 0
-        const cogLevelResolution = COG.zoomMap.get(cogLevel).zoomResolutionMetersPerPixel
+        const cogLevelResolution = COG.mapCogImageByLevelIndex.get(cogLevel).zoomResolutionMetersPerPixel
         
         console.log("COG Level", cogLevel)
         console.log("COG Level Resolution", cogLevelResolution)
@@ -80,7 +80,7 @@ describe('COG and Tiles loading', () => {
 
         const COG = await CogImage.fromUrl(useTestCogUrl());
 
-        const cogMainBbox = COG.zoomMap.get(0).bbox
+        const cogMainBbox = COG.mapCogImageByLevelIndex.get(0).bbox
 
         console.log("COG BBOX", cogMainBbox)
     });

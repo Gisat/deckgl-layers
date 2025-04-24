@@ -2,6 +2,8 @@ import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
 import { CogImage } from '@geoimage/cogs/models.cog';
 import { Nullable } from '@geoimage/shared/helpers/code.types';
+import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
+import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
 import { ReadRasterResult } from 'geotiff';
 
 interface CogLayerProps {
@@ -51,7 +53,7 @@ const LAYER_DEFAULTS = {
  * });
  * ```
  */
-export const createCogLayer = ({cogImage, id, tileSize, maxZoom, minZoom}: CogLayerProps): TileLayer => {
+export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: CogLayerProps): TileLayer => {
 
   return new TileLayer({
 
@@ -73,11 +75,16 @@ export const createCogLayer = ({cogImage, id, tileSize, maxZoom, minZoom}: CogLa
 
       try {
 
-        const { index: { x, y, z } } = tile;
+        const { index: { x, y, z }, bbox: webProjectionBounds } = tile;
+
+        console.log("BBOX", webProjectionBounds);
+
+        const { bbox: bboxMercator } = convertBoundsToMercator(webProjectionBounds as BoundingBox)
+
 
         // Fetch raster data for the given tile coordinates
-        const rasterResults: Nullable<ReadRasterResult> = await cogImage.imageForXYZ([x, y, z]);
-        const cogZoomInfo = cogImage.zoomMap.get(z);
+        const rasterResults: Nullable<ReadRasterResult> = await cogImage.imageByBoundsForXYZ(z, bboxMercator);
+        const cogZoomInfo = cogImage.mapCogImageByLevelIndex.get(z);
 
         if (!cogZoomInfo) {
           console.error('No zoom information available for tile:', tile);

@@ -1,7 +1,7 @@
-import GeoTIFF, { fromFile, fromUrl, ReadRasterResult } from "geotiff";
+import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
-import { boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
+import { bboxToBounds, boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
 import { NullablePromise } from "@geoimage/shared/helpers/code.types";
 
 /**
@@ -12,24 +12,32 @@ import { NullablePromise } from "@geoimage/shared/helpers/code.types";
  * Level 2 is the second zoom level (quarter resolution)
  * and so on...
  */
-interface CogZoom {
-    zoomLevelImage: number;
+interface CogLevel {
     pixelSize: [number, number];
     tileSize: [number, number];
     numberOfTiles: [number, number];
-    origin: [number, number, number];
-    bbox: TupleBBOX;
-    bounds: BoundingBox
-    resolution: [number, number, number];
+    resolutionMetersPerPixel: number;
     zoomResolutionMetersPerPixel: number;
+    imageLevel: number;
     xyzZoomLevel: number;
     xyzResolution: number;
+    image: GeoTIFFImage;
 }
+
 
 export class CogImage {
 
     // source of the COG analyse data
     tiff: GeoTIFF;
+
+    // origin of the COG image in meters
+    origin: [number, number, number];
+
+    // bbox of the COG image in meters
+    bbox: TupleBBOX;
+
+    // bounds of the COG image in meters
+    bounds: BoundingBox
 
     /* 
     * COG is a TIFF composed of multiple images, each representing a zoom level
@@ -39,20 +47,22 @@ export class CogImage {
     * zoom 2 is the second zoom level (quarter resolution)
     * and so on... 
     * */
-    numberOfZoomsInCog: number = undefined;
+    numberOfLevelsInCog: number = undefined;
 
-    // map of zoom levels with their properties
-    zoomMap: Map<number, Partial<CogZoom>>;
+    // map of COG levels with their properties
+    mapCogImageByLevelIndex: Map<number, CogLevel>;
 
-    // map of tile zoom levels to COG levels
-    // when we need to map XYZ tile to COG level
-    // we need to find the best COG level for the given XYZ tile
-    tileZoomToCogLevelMap: Map<number, number>;
+    // map of COG levels for the tile zoom level
+    mapCogImageByTileZoom: Map<number, CogLevel>;
+
+    // helper for XYZ tiles, like for comparing resolutions
+    tileMagicXYZ: TileMagicXYZ;
 
     private constructor(tiff: GeoTIFF) {
         this.tiff = tiff;
-        this.zoomMap = new Map();
-        this.tileZoomToCogLevelMap = new Map();
+        this.mapCogImageByLevelIndex = new Map();
+        this.mapCogImageByTileZoom = new Map();
+        this.tileMagicXYZ = new TileMagicXYZ();
     }
 
     /**
@@ -74,12 +84,9 @@ export class CogImage {
      */
     async initialize() {
         const zooms = await this.tiff.getImageCount();
-        let tileMagicXYZ: TileMagicXYZ
+        this.numberOfLevelsInCog = zooms;
 
         let mainResolutions: [number, number, number] = [0, 0, 0];
-        let mainOrigins: [number, number, number] = [0, 0, 0];
-        let mainBoundingBox: [number, number, number, number] = [0, 0, 0, 0];
-
         let resolutionPyramid: Map<number, number> = new Map();
 
         for (let cogZoom = 0; cogZoom < zooms; cogZoom++) {
@@ -90,17 +97,17 @@ export class CogImage {
             // setup main image level properties (COG level 0)
             // at lower image levels the COG hasn't those values
             if (cogZoom === 0) {
-                
-                // get the main image properties
-                mainOrigins = cogLevelImage.getOrigin() as [number, number, number];
+
+                // resolution chenges by each level, but is calculated from the main image
                 mainResolutions = cogLevelImage.getResolution() as [number, number, number];
-                mainBoundingBox = cogLevelImage.getBoundingBox() as [number, number, number, number];
+
+                // origin and bounding box of the COG image are same for all levels
+                this.origin = cogLevelImage.getOrigin() as [number, number, number];
+                this.bbox= cogLevelImage.getBoundingBox() as [number, number, number, number];
+                this.bounds = bboxToBounds(this.bbox);
 
                 // build the resolution pyramid for the COG levels
                 resolutionPyramid = CogImage.buildCogResolutionPyramid(mainResolutions[0], zooms);
-
-                // initialise XYZ tile helper
-                tileMagicXYZ = new TileMagicXYZ(cogLevelImage.getTileWidth());
             }
 
             // get the tile width and height in pixels
@@ -118,24 +125,27 @@ export class CogImage {
             // get the closest XYZ tile resolution for the current COG level
             const {
                 resolution: xyzResolution, zoomLevel: xyzZoomLevel
-            } = tileMagicXYZ.bestZoomLevelForResolution(resolutionPyramid.get(cogZoom))
+            } = this.tileMagicXYZ.bestZoomLevelForResolution(resolutionPyramid.get(cogZoom))
 
-            // set informations about the COG level
-            this.zoomMap.set(cogZoom, {
-                zoomLevelImage: cogZoom,
+            // setup zoom level information
+            const cogZoomInfo: CogLevel = {
+                imageLevel: cogZoom,
                 pixelSize: [pixelWidth, pixelHeight],
                 tileSize: [tileWidth, tileHeight],
                 numberOfTiles: [numberOfTilesX, numberOfTilesY],
-                origin: mainOrigins, // TODO: calculate this for each level
-                resolution: mainResolutions, // TODO: calculate this for each level
-                bbox: mainBoundingBox, // TODO: calculate this for each level
+                resolutionMetersPerPixel: resolutionPyramid.get(cogZoom),
                 zoomResolutionMetersPerPixel: resolutionPyramid.get(cogZoom),
                 xyzZoomLevel,
-                xyzResolution
-            });
+                xyzResolution,
+                image: cogLevelImage,
+
+            }
+
+            // set informations about the COG level
+            this.mapCogImageByLevelIndex.set(cogZoom, cogZoomInfo);
 
             // mape XYZ tile level to COG level
-            this.tileZoomToCogLevelMap.set(xyzZoomLevel, cogZoom);
+            this.mapCogImageByTileZoom.set(xyzZoomLevel, cogZoomInfo);
         }
     }
 
@@ -153,7 +163,7 @@ export class CogImage {
      */
     static buildCogResolutionPyramid = (
         levelZeroXResolution: number,
-        levels: number // total number of COG levels including level 0
+        levels: number // total number of COG levels from COG level 0
     ): Map<number, number> => {
         const resolutionMap = new Map<number, number>();
 
@@ -180,7 +190,7 @@ export class CogImage {
     bestZoomLevelForResolution = (resolutionMetersPerPixels: number) => {
 
         // list of all COG level resolutions from the zoomMap
-        const cogResolutions = Array.from(this.zoomMap.values()).map((cogLevel) => cogLevel.zoomResolutionMetersPerPixel);
+        const cogResolutions = Array.from(this.mapCogImageByLevelIndex.values()).map((cogLevel) => cogLevel.zoomResolutionMetersPerPixel);
 
         // current best resolution index
         let bestResolutionIndex = 0;
@@ -238,11 +248,10 @@ export class CogImage {
     imageForXYZ = async ([x, y, z]: [number, number, number], tileSize = 256, xyzMaxZoom = 26): NullablePromise<ReadRasterResult> => {
 
         // prepare XYZ tile helper
-        const xyzHelper = new TileMagicXYZ(tileSize, xyzMaxZoom);
-        const xyzBoundingBox = xyzHelper.tileXYToMercatorBBox([x, y, z]);
+        const xyzBoundingBox = this.tileMagicXYZ.tileXYToMercatorBBox([x, y, z]);
 
         // get the COG level for the given XYZ tile
-        const cogImageLevel = this.tileZoomToCogLevelMap.get(z);
+        const cogImageLevel = this.mapCogImageByTileZoom.get(z);
         // const imageZoomInfo = this.zoomMap.get(cogImageLevel);
         // const imageBoundingBox = imageZoomInfo.bbox;
 
@@ -250,13 +259,13 @@ export class CogImage {
         // // if not, return null
         // // we need to o this as the Geotiff returns a rester always, but not with values
         // const bboxOverlap = boundsOverlapCheck(xyzBoundingBox, imageBoundingBox);
-        
+
         // if (!bboxOverlap) {
         //     return null
         // }
 
         // get the COG image at the given level
-        const image = await this.tiff.getImage(cogImageLevel);
+        const image = await this.tiff.getImage(cogImageLevel.imageLevel);
 
         // get the bounding box of the rendered area
         const requiredAreaFromImage = boundsToBbox(xyzBoundingBox)
@@ -275,6 +284,30 @@ export class CogImage {
 
         // return the rasters
         return rasters
+    }
+
+    /**
+     * Retrieves raster data for a specific zoom level and bounding box.
+     *
+     * @param zoom - The zoom level for which the raster data is requested.
+     * @param bbox - The bounding box defining the area of interest, represented as a tuple.
+     * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
+     * @throws An error if no image is found for the specified zoom level.
+     */
+    imageByBoundsForXYZ = (zoom: number, bbox: TupleBBOX): Promise<ReadRasterResult> => {
+        const imageZoomInfo = this.mapCogImageByLevelIndex.get(zoom);
+
+        if (!imageZoomInfo) {
+            throw new Error(`No image found for zoom level ${zoom}`);
+        }
+
+        const rastersReadPromise = imageZoomInfo.image.readRasters({
+            bbox,
+            // TODO: bands etc.
+        })
+
+        // return the rasters
+        return rastersReadPromise
     }
 
     /**
