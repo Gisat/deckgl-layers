@@ -53,9 +53,6 @@ const LAYER_DEFAULTS = {
  */
 export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
 
-  // Load the COG image from the URL destination
-  const cog = await CogImage.fromUrl(props.url);
-
   // Define the tile layer
   const layer = new TileLayer({
 
@@ -76,6 +73,10 @@ export const createCogLayer = async (props: CogLayerProps): Promise<any> => {
     getTileData: async (tile) => {
 
       try {
+        // Load the COG image from the URL destination
+        const cog = await CogImage.fromUrl(props.url);
+
+
         const { index: { x, y, z } } = tile;
 
         // Fetch raster data for the given tile coordinates
