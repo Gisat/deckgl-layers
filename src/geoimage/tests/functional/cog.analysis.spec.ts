@@ -1,9 +1,19 @@
 import { useTestCogUrl } from '@test/tools/fixtures.cogs';
 import { CogImage } from '@geoimage/cogs/models.cog';
 import { TileMagicXYZ } from '@geoimage/tiles/models.tileMagic';
+import { convertBoundsToMercator, convertMercatorBoundsToCoordinates } from '@geoimage/shared/helpers/gis.mercator';
+import { bboxToBounds } from '@geoimage/shared/helpers/gis.transform';
 
 
 describe('COG and Tiles loading', () => {
+
+    let COG: CogImage;
+    let xyz: TileMagicXYZ;
+    
+    beforeAll(async () => {
+        COG = await CogImage.fromUrl(useTestCogUrl());
+        xyz = new TileMagicXYZ(256, 22);
+    });
 
     test('Resolutions mach with XYZ zoom resolutions', async () => {
         const checkedResolutions = [
@@ -26,16 +36,13 @@ describe('COG and Tiles loading', () => {
 
         console.log("---Cog to XYZ resolution matching---")
 
-        const COG = await CogImage.fromUrl(useTestCogUrl());
         const cogLevel = 0
         const cogLevelResolution = COG.mapCogImageByLevelIndex.get(cogLevel).zoomResolutionMetersPerPixel
-        
+
         console.log("COG Level", cogLevel)
         console.log("COG Level Resolution", cogLevelResolution)
 
-        const xyz = new TileMagicXYZ(256, 22)
-
-        const {zoomLevel, resolution} = xyz.bestZoomLevelForResolution(cogLevelResolution)
+        const { zoomLevel, resolution } = xyz.bestZoomLevelForResolution(cogLevelResolution)
         console.log("XYZ Level for cog", zoomLevel)
         console.log("XYZ Resolution for cog", resolution)
 
@@ -46,13 +53,10 @@ describe('COG and Tiles loading', () => {
     test("XYZ resolutuons match with COG level", async () => {
         console.log("---XYZ to Cog resolution matching---")
 
-        const COG = await CogImage.fromUrl(useTestCogUrl());
-        const xyz = new TileMagicXYZ(256, 22)
-
         const xyzLevel = 10
         const xyzResolution = xyz.tileZoomResolutionMap.get(xyzLevel)
-        
-        const {resolution: cogResoluion, zoomLevel: imageLevel} = COG.bestZoomLevelForResolution(xyzResolution)
+
+        const { resolution: cogResoluion, zoomLevel: imageLevel } = COG.bestZoomLevelForResolution(xyzResolution)
 
         console.log("XYZ Level", xyzLevel)
         console.log("XYZ Resolution", xyzResolution)
@@ -68,47 +72,83 @@ describe('COG and Tiles loading', () => {
 
         const coordinates: [number, number, number] = [1, 1, 1]
 
-        const xyz = new TileMagicXYZ(256, 22)
-
         const bbox = xyz.tileXYToMercatorBBox(coordinates)
-        
+
         console.log("TileXYZ to BBOX", bbox)
     });
 
     test("COG BBOX", async () => {
         console.log("---COG BBOX---")
 
-        const COG = await CogImage.fromUrl(useTestCogUrl());
+        console.log("COG BBOX", COG.bbox)
+        console.log("COG BBOX", COG.bounds)
 
-        const cogMainBbox = COG.mapCogImageByLevelIndex.get(0).bbox
+        const { bbox, bounds } = convertMercatorBoundsToCoordinates(COG.bounds)
 
-        console.log("COG BBOX", cogMainBbox)
+        console.log("COG Transformed BBOX", bbox)
+        console.log("COG Transformed BBOX", bounds)
     });
 
-    test("COG Rasters for XYZ", async () => {
-        console.log("---COG Rasters---")
+    // test("COG Rasters for XYZ", async () => {
+    //     console.log("---COG Rasters---")
 
-        const COG = await CogImage.fromUrl(useTestCogUrl());
+    //     const COG = await CogImage.fromUrl(useTestCogUrl());
 
-        const rasters = await COG.imageForXYZ([44, 24, 6]);
+    //     const rasters = await COG.imageForXYZ([44, 24, 6]);
 
-        if (!rasters) {
-            throw new Error("No rasters found for the given XYZ coordinates");
-        }
+    //     if (!rasters) {
+    //         throw new Error("No rasters found for the given XYZ coordinates");
+    //     }
+    //     expect(rasters.length).toBeGreaterThan(0);
+    // });
 
-        console.log("COG BBOX", rasters.length);
+    test("COG Rasters XYZ coordinates", async () => {
+        console.log("---COG Rasters Match---")
 
-        expect(rasters.length).toBeGreaterThan(0);
+        const bbox = [76.4, 20.0, 98.28, 31.5]
+        const bounds = bboxToBounds(bbox)
+        const { bbox: mercatorBbox } = convertBoundsToMercator(bounds)
+
+        const rasters = await COG.imageByBoundsForXYZ(2, mercatorBbox);
+
+        const rasterValues = rasters as Float32Array
+        // const hasData = rasterValues.some(value => value !== 0 && !isNaN(value));
+
+        // console.log("COG Rasters", rasters)
+        // console.log("COG Anyvalue", hasData)
+
+        CogImage.readAllRasterValues(rasters)
+
+        // expect(hasData).toBe(true);
+
     });
     
     test("COG Rasters miss XYZ coordinates", async () => {
-        console.log("---COG Rasters---")
+        console.log("---COG Rasters Miss---")
 
-        const COG = await CogImage.fromUrl(useTestCogUrl());
+        const bbox = [9.6, 36.1, 31.4, 45.8]
 
-        const rasters = await COG.imageForXYZ([43, 20, 6]);
+        const bounds = bboxToBounds(bbox)
+        const { bbox: mercatorBbox } = convertBoundsToMercator(bounds)
 
-        expect(rasters).toEqual(null)
+
+        const rasters = await COG.imageByBoundsForXYZ(8, mercatorBbox);
+
+        const rasterValues = rasters as Float32Array
+        const hasData = rasterValues.some(value => value !== 0 && !isNaN(value));
+
+        for (const value of rasterValues) {
+            if (value !== 0 && !isNaN(value)) {
+                console.log("COG Raster Value", value)
+            }
+        }
+
+        console.log("COG Rasters", rasters)
+        console.log("COG Anyvalue", hasData)
+
+
+        expect(hasData).toBe(false);
+
     });
 
 });

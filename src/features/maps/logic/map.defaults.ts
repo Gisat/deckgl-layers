@@ -6,9 +6,9 @@ import { MapView, MapViewState } from "@deck.gl/core"
  */
 export const defaultMapState = () => {
   const initMapState: MapViewState = {
-    latitude: 26.73,
-    longitude: 88.41,
-    zoom: 8,
+    latitude: 50.0894,
+    longitude: 14.4127,
+    zoom: 15,
     maxZoom: 20,
     maxPitch: 89,
     bearing: 0,

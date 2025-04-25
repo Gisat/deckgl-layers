@@ -13,9 +13,39 @@ export const convertBoundsToMercator = (bounds: BoundingBox) => {
     const wgs84 = 'EPSG:4326';
     const webMerc = 'EPSG:3857';
 
-
     const bottomLeft = proj4(wgs84, webMerc, [bounds.west, bounds.south]);
     const topRight = proj4(wgs84, webMerc, [bounds.east, bounds.north]);
+
+    const mercatorBBox = {
+        minX: bottomLeft[0],
+        minY: bottomLeft[1],
+        maxX: topRight[0],
+        maxY: topRight[1]
+    };
+
+    return {
+        bounds: {
+            west: mercatorBBox.minX,
+            south: mercatorBBox.minY,
+            east: mercatorBBox.maxX,
+            north: mercatorBBox.maxY
+        } as BoundingBox,
+        bbox: [
+            mercatorBBox.minX,
+            mercatorBBox.minY,
+            mercatorBBox.maxX,
+            mercatorBBox.maxY
+        ] as TupleBBOX
+    }
+}
+export const convertMercatorBoundsToCoordinates = (bounds: BoundingBox) => {
+
+    const wgs84 = 'EPSG:4326';
+    const webMerc = 'EPSG:3857';
+
+
+    const bottomLeft = proj4(webMerc, wgs84, [bounds.west, bounds.south]);
+    const topRight = proj4(webMerc, wgs84, [bounds.east, bounds.north]);
 
     const mercatorBBox = {
         minX: bottomLeft[0],

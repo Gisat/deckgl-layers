@@ -2,6 +2,7 @@ import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
 import { CogImage } from '@geoimage/cogs/models.cog';
 import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
+import { boundsToBbox } from '@geoimage/shared/helpers/gis.transform';
 import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
 
 interface CogLayerProps {
@@ -75,17 +76,17 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
 
         const { index: { x, y, z }, bbox: webProjectionBounds } = tile;
 
-        console.log("BBOX", webProjectionBounds);
+        console.log("1, BBOX", webProjectionBounds);
 
         const { bbox: bboxMercator } = convertBoundsToMercator(webProjectionBounds as BoundingBox)
 
 
-        console.log("BBOX MERCATOR", bboxMercator);
+        console.log("1, BBOX MERCATOR", bboxMercator);
 
         // Fetch raster data for the given tile coordinates
         const rasterResults = await cogImage.imageByBoundsForXYZ(z, bboxMercator);
         if (!rasterResults) {
-          console.error('No raster data available for tile:', tile);
+          console.info('No raster data available for tile:', tile);
           return null;
         }
 
@@ -96,26 +97,26 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
           return null;
         }
 
-        const [width, height] = cogZoomInfo.pixelSize
+        const [width, height] = [rasterResults.width, rasterResults.height]
+        const output = new Uint8ClampedArray(width * height * 4); // 4 channels per value (RGBA)
+        const rasterData = rasterResults as ArrayLike<number>;
 
-        // Convert raw raster data into an ImageBitmap or ImageData
-        console.log('Raster results:', rasterResults);
-        const pixelArray = new Uint8ClampedArray(rasterResults[1] as ArrayLike<number>);
-        const expectedLength = width * height * 4;
-
-        if (pixelArray.length !== expectedLength) {
-          console.warn(`Raster data length (${pixelArray.length}) does not match expected length (${expectedLength}). Padding with zeros.`);
-          const paddedArray = new Uint8ClampedArray(expectedLength);
-          paddedArray.set(pixelArray.subarray(0, Math.min(pixelArray.length, expectedLength)));
-          pixelArray.set(paddedArray);
+        for (let i = 0; i < rasterData.length; i++) {
+          const value = rasterData[i]; // 0–255 assumed (you might need to normalize if Float32)
+          
+          output[i * 4 + 0] = value; // R
+          output[i * 4 + 1] = value; // G
+          output[i * 4 + 2] = value; // B
+          output[i * 4 + 3] = 255;   // A (fully opaque)
         }
 
-        const imageData = new ImageData(pixelArray, width, height);
+        const imageData = new ImageData(output, width, height);
 
-        const bitmap = await createImageBitmap(imageData);
+        const bitmap = await createImageBitmap(imageData); // optional: wrap in async
 
         return {
-          data: bitmap
+          bitmap,
+          bounds: boundsToBbox(webProjectionBounds as BoundingBox),
         };
       } catch (error) {
         console.error('Error fetching tile data:', error);
@@ -124,18 +125,32 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
     },
 
     renderSubLayers: (props) => {
-      const {
-        id,
-        data,
-      } = props;
+      const { data } = props;
 
-      console.log('Tile data:', data);
+      const randomNumber = Math.floor(Math.random() * 100000);
+      const bitmap = data?.bitmap;
+      const bounds = data?.bounds;
 
-      if (data)
+      console.log("2, Bitmap", bitmap);
+      console.log("2, Bounds", bounds);
+
+      if (!bitmap) 
+        console.warn('No bitmap available for rendering:', data);
+
+      if(!bounds) 
+        console.warn('No bounds available for rendering:', data);
+
+      if (bitmap && bounds && bounds.every(Number.isFinite)) {
         return new BitmapLayer({
-          id: `tile-bitmap-${id}`,
-          image: data
+          id: `tile-bitmap-${randomNumber}`,
+          image: bitmap,
+          bounds: bounds,
+          pickable: false
         });
+      }
+    
+      console.warn('No valid bitmap or bounds available for rendering:', data);
+      return null;
     }
   });
 }
