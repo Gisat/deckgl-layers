@@ -84,7 +84,7 @@ export class CogDynamicImage {
      *
      * @throws {Error} If there is an issue retrieving the main image or its properties.
      */
-    async initialize() {
+    async initialize(): Promise<void> {
 
         // image at level 0 is the main image
         // it has the same origin and bounding box for all levels
@@ -118,11 +118,18 @@ export class CogDynamicImage {
      *   - `imageResolution`: The resolution of the image at the calculated level.
      */
     expectedImageForTileZoom = (tileZoom: number): ImageLevelWithResolution => {
+
+        // how far is this XYZ zoom from the image level 0 zoom
         const xyzZoomDifference = this.xyzMainImageZoom - tileZoom;
+
+        // the value can be negative, so we need to set it to 0 in that case
+        // this COG image level is predicted for the XYZ zoom
         const imageLevel = Math.max(0, xyzZoomDifference);
 
+        // now can expect the image resolution for the level
         const imageResolution = CogDynamicImage.imgageResolutionForLevel(imageLevel, this.mainResolutionMetersPerPixel);
 
+        // return the image level and resolution
         return {
             imageLevel,
             imageResolution
@@ -141,12 +148,16 @@ export class CogDynamicImage {
      */
     expectedImageForResolution = (resolutionMetersPerPixel: number, numberOfIteratedLevels = 30): ImageLevelWithResolution => {
 
-        // current best resolution index
+        // define the best results
         let bestResult: { imageLevel: number, imageResolution: number };
 
+        // iterate over expected levels to find the best match
         for (let level = 0; level < numberOfIteratedLevels; level++) {
+
+            // level should have this resolution
             const levelResolution = CogDynamicImage.imgageResolutionForLevel(level, this.mainResolutionMetersPerPixel);
 
+            // if this is the COG level 0, set it as the best one defaultly
             if (level === 0) {
                 bestResult = {
                     imageLevel: level,
@@ -173,6 +184,7 @@ export class CogDynamicImage {
             }
         }
 
+        // and here we have a winner
         return bestResult;
     }
 
@@ -184,10 +196,14 @@ export class CogDynamicImage {
      * @throws Logs an informational message if the image cannot be retrieved.
      */
     tryToReadImage = async (imageLevel: number) => {
+        // we dont know how many levels are in the COG
+        // so we try it...
         try {
+            // there is a level, yay!
             const image = await this.tiff.getImage(imageLevel);
             return image;
         } catch (error) {
+            // ...or not :(
             console.info(`No image at level ${imageLevel}:`, imageLevel);
             return null;
         }
@@ -199,9 +215,9 @@ export class CogDynamicImage {
      * @param imageLevel - The level of the image for which the resolution is being calculated.
      * @returns The resolution of the image at the specified level. Resolution is in meters per pixel.
      */
-    expectedImageLevelResolution = (imageLevel: number) => {
-        return CogDynamicImage.imgageResolutionForLevel(imageLevel, this.mainResolutionMetersPerPixel);
-    }
+    expectedImageLevelResolution = (imageLevel: number) =>
+        CogDynamicImage.imgageResolutionForLevel(imageLevel, this.mainResolutionMetersPerPixel);
+
 
     /**
      * Retrieves raster data for a specific zoom level and bounding box.
@@ -220,12 +236,14 @@ export class CogDynamicImage {
          * @param image - The GeoTIFF image to check.
          * @throws {Error} Throws an error if the image is not tiled.
          */
-        const checkTiledCog = (image: GeoTIFFImage) => {
-            if (!image.isTiled) 
+        const checkCogIsTiled = (image: GeoTIFFImage) => {
+            if (!image.isTiled)
                 throw new Error("The image is not tiled");
         }
 
         // check if the COG image bounding box overlaps with the XYZ tile bounding box
+        // the Geotiff library always returns a result
+        // but we don't need it in the case of no overlap
         const bboxOverlap = boundsOverlapCheck(bbox, this.bbox);
 
         if (!bboxOverlap) {
@@ -233,11 +251,10 @@ export class CogDynamicImage {
             return null
         }
 
-        // guess the image level for the requested zoom level
+        // guess the image level for the requested XYZ tile zoom level
         const { imageLevel } = this.expectedImageForTileZoom(zoom);
 
         // try to read image for the requested level
-        // if the COG has no image at the level, return null
         const image = await this.tryToReadImage(imageLevel);
 
         // no image at the level? Than return null
@@ -245,10 +262,11 @@ export class CogDynamicImage {
             return null;
 
         // we need tiled COGs only
-        checkTiledCog(image)
+        checkCogIsTiled(image)
 
         // select and read rasters from the image
-        // using interleave = return one long array of values
+        // using interleave = raster result one long array of values
+        // with false it is an array of arrays (array per band)
         // TODO: make interleave optional
         // TODO: bands etc.
         const rastersRead = await image.readRasters({
@@ -259,7 +277,7 @@ export class CogDynamicImage {
             width: tileSize,
         })
 
-        // return the rasters
+        // return the raster result
         return rastersRead
     }
 
