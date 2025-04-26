@@ -1,6 +1,6 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
-import { CogImage } from '@geoimage/cogs/models.cog';
+import { CogImage } from '@geoimage/cogs/_outdated.models.cog';
 import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
 import { boundsToBbox } from '@geoimage/shared/helpers/gis.transform';
 import { BoundingBox } from '@geoimage/shared/helpers/gis.types';

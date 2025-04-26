@@ -1,9 +1,9 @@
 import { useTestCogUrl } from '@test/tools/fixtures.cogs';
-import { CogImage } from '@geoimage/cogs/models.cog';
+import { CogImage } from '@geoimage/cogs/_outdated.models.cog';
 import { TileMagicXYZ } from '@geoimage/tiles/models.tileMagic';
 import { convertBoundsToMercator, convertMercatorBoundsToCoordinates } from '@geoimage/shared/helpers/gis.mercator';
 import { bboxToBounds } from '@geoimage/shared/helpers/gis.transform';
-import { CogDynamicImage } from '@geoimage/cogs/models.cog2';
+import { CogDynamicImage } from '@geoimage/cogs/models.cog';
 
 
 describe('COG and Tiles loading', () => {
