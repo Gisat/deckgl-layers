@@ -51,7 +51,7 @@ export class TileMagicXYZ {
      *   - `zoomLevel`: The index of the zoom level with the closest resolution.
      *   - `resolution`: The resolution value at the determined zoom level.
      */
-    bestZoomLevelForResolution = (resolutionMetersPerPixels: number) => {
+    bestTileZoomForResolution = (resolutionMetersPerPixels: number) => {
 
         // resolution for each zoom level
         const tileZoomLevelResolutions = Array.from(this.tileZoomResolutionMap.values())

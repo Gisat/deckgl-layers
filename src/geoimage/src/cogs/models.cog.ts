@@ -103,7 +103,7 @@ export class CogDynamicImage {
 
         const {
             zoomLevel: xyzZoomLevel
-        } = this.tileMagicXYZ.bestZoomLevelForResolution(this.mainResolutionMetersPerPixel)
+        } = this.tileMagicXYZ.bestTileZoomForResolution(this.mainResolutionMetersPerPixel)
         this.xyzMainImageZoom = xyzZoomLevel;
     }
 
@@ -317,13 +317,36 @@ export class CogDynamicImage {
      * It can be useful for debugging purposes to see the values of the raster data.
      * @param rasterResult Result given by the readRasters method
      */
-    static readAllRasterValues = (rasterResult: ReadRasterResult) => {
+    static debugAllRasterValues = (rasterResult: ReadRasterResult) => {
         for (let i = 0; i < rasterResult.length; i++) {
             const value = rasterResult[i];
             console.log(`Value at index ${i}: ${value}`);
         }
     }
 
+    static debugAnyValueInRaster = (rasterResult: any) => {
+        // check if the raster result is empty
+        if (!rasterResult || rasterResult.length === 0) {
+            console.log("No rasters found for the given XYZ coordinates");
+            return false;
+        }
+
+        const arr = Array.from(rasterResult);
+        // check if the raster result is an array
+        if (!Array.isArray(arr)) {
+            console.log("Raster result is not an array");
+            return false;
+        }
+
+        // check if the raster result has any values
+        const hasData = rasterResult.some(value => value !== 0 && !isNaN(value));
+        if (!hasData) {
+            console.log("No data found in the raster result");
+            return false;
+        }
+
+        return true;
+    }
     /**
      * Creates a new instance of `CogImage` from a given URL.
      *
