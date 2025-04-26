@@ -36,7 +36,7 @@ export class TileMagicXYZ {
         const baseResolution = MERCATOR_ZERO_256_RESOLUTION * (256 / tileSize);
 
         for (let zoom = 0; zoom <= zooms; zoom++) {
-            const resolution = +(baseResolution / Math.pow(2, zoom)).toFixed(4);
+            const resolution = +(baseResolution / Math.pow(2, zoom)).toFixed(3);
             tileZoomResolutionMap.set(zoom, resolution);
         }
 

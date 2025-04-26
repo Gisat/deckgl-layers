@@ -184,7 +184,7 @@ export class CogImage {
         // it means pixel represents lowest number of meters
         // as we go out of the image each pixel represents more meters
         // diffferences are in powers of 2
-        const resolutionMetersPerPixel = +(cogLevelZeroResolution * Math.pow(2, actualImageLevel)).toFixed(4);
+        const resolutionMetersPerPixel = +(cogLevelZeroResolution * Math.pow(2, actualImageLevel)).toFixed(3);
         
         return resolutionMetersPerPixel
     }

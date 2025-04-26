@@ -1,0 +1,312 @@
+import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geotiff";
+import { TileMagicXYZ } from "../tiles/models.tileMagic";
+import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
+import { bboxToBounds, boundsOverlapCheck } from "@geoimage/shared/helpers/gis.transform";
+
+type ImageLevelWithResolution = {
+    imageLevel: number;
+    imageResolution: number;
+}
+
+export class CogDynamicImage {
+
+    // source of the COG analyse data
+    tiff: GeoTIFF;
+
+    // origin of the COG image in meters
+    origin: [number, number, number];
+
+    // bbox of the COG image in meters
+    bbox: TupleBBOX;
+
+    // bounds of the COG image in meters
+    bounds: BoundingBox
+
+    mainResolution: number;
+
+    xyzMainImageZoom: number
+
+    // helper for XYZ tiles, like for comparing resolutions
+    tileMagicXYZ: TileMagicXYZ;
+
+    /**
+     * Contructor is private, use fromUrl or fromFile methods
+     * It's because the GeoTIFF library is async
+     * @param tiff 
+     */
+    private constructor(tiff: GeoTIFF) {
+        this.tiff = tiff;
+        this.tileMagicXYZ = new TileMagicXYZ();
+    }
+
+    /**
+     * Initializes the COG (Cloud Optimized GeoTIFF) image by loading the main image at level 0
+     * and extracting its properties such as origin, bounding box, bounds, and resolution.
+     * Additionally, determines the best zoom level for the main image resolution.
+     *
+     * @async
+     * @returns {Promise<void>} A promise that resolves when the initialization is complete.
+     *
+     * @remarks
+     * - The main image at level 0 is considered the highest resolution image and is used
+     *   to derive the origin, bounding box, and resolution for all levels.
+     * - The `tileMagicXYZ.bestZoomLevelForResolution` method is used to calculate the
+     *   appropriate zoom level for the main image resolution.
+     *
+     * @throws {Error} If there is an issue retrieving the main image or its properties.
+     */
+    async initialize() {
+
+        // image at level 0 is the main image
+        // it has the same origin and bounding box for all levels
+        // it is the image with the highest resolution
+        const mainImage = await this.tiff.getImage(0);
+
+
+        // origin and bounding box of the COG image are same for all levels
+        this.origin = mainImage.getOrigin() as [number, number, number];
+        this.bbox = mainImage.getBoundingBox() as [number, number, number, number];
+        this.bounds = bboxToBounds(this.bbox);
+
+        // COG image resolution
+        // tiled COGs has same re
+        this.mainResolution = mainImage.getResolution()[0] as number;
+
+        const {
+            zoomLevel: xyzZoomLevel
+        } = this.tileMagicXYZ.bestZoomLevelForResolution(this.mainResolution)
+        this.xyzMainImageZoom = xyzZoomLevel;
+    }
+
+    /**
+     * Calculates the expected image level and resolution for a given tile zoom level.
+     * The point is o find the match between the COG level 0 image and the XYZ tile zoom level.
+     * From that point we assume, that the change of XYZ is the same as the COG image level, but in reverse.
+     * 
+     * @param tileZoom - The zoom level of the XYZ tile for which the image level and resolution are calculated.
+     * @returns An object containing:
+     *   - `imageLevel`: The calculated image level, ensuring it is not less than 0.
+     *   - `imageResolution`: The resolution of the image at the calculated level.
+     */
+    expectedImageForTileZoom = (tileZoom: number): ImageLevelWithResolution => {
+        const xyzZoomDifference = this.xyzMainImageZoom - tileZoom;
+        const imageLevel = Math.max(0, xyzZoomDifference);
+
+        const imageResolution = CogDynamicImage.imgageResolutionForLevel(imageLevel, this.mainResolution);
+
+        return {
+            imageLevel,
+            imageResolution
+        };
+    }
+
+    /**
+     * Determines the best image level and its resolution that most closely matches
+     * the requested resolution in meters per pixel. Iterates through a specified
+     * number of levels to find the closest match.
+     *
+     * @param resolutionMetersPerPixel - The desired resolution in meters per pixel.
+     * @param numberOfIteratedLevels - The number of levels to iterate through to find the best match.
+     *                                  Defaults to 30 if not specified.
+     * @returns An object containing the best image level and its corresponding resolution.
+     */
+    expectedImageForResolution = (resolutionMetersPerPixel: number, numberOfIteratedLevels = 30): ImageLevelWithResolution => {
+
+        // current best resolution index
+        let bestResult: { imageLevel: number, imageResolution: number };
+
+        for (let level = 0; level < numberOfIteratedLevels; level++) {
+            const levelResolution = CogDynamicImage.imgageResolutionForLevel(level, this.mainResolution);
+
+            if (level === 0) {
+                bestResult = {
+                    imageLevel: level,
+                    imageResolution: levelResolution
+                }
+            }
+
+            // count the difference between the two resolutions
+            // ...the actually best
+            const bestDifference = Math.abs(bestResult.imageResolution - resolutionMetersPerPixel);
+
+            // ...and the current one
+            const currentDifference = Math.abs(levelResolution - resolutionMetersPerPixel);
+
+            // is the current resolution closer to the requested resolution than the best one?
+            const hasThisCogLevelCloserResolution = currentDifference < bestDifference;
+
+            // if so, set the current resolution as the best one
+            if (hasThisCogLevelCloserResolution) {
+                bestResult = {
+                    imageLevel: level,
+                    imageResolution: levelResolution
+                }
+            }
+        }
+
+        return bestResult;
+    }
+
+    /**
+     * Attempts to read an image at the specified level from the TIFF file.
+     *
+     * @param imageLevel - The level of the image to read.
+     * @returns A promise that resolves to the image if it exists, or `null` if no image is available at the specified level.
+     * @throws Logs an informational message if the image cannot be retrieved.
+     */
+    tryToReadImage = async (imageLevel: number) => {
+        try {
+            const image = await this.tiff.getImage(imageLevel);
+            return image;
+        } catch (error) {
+            console.info(`No image at level ${imageLevel}:`, imageLevel);
+            return null;
+        }
+    }
+
+    /**
+     * Calculates the expected resolution of an COG image for a given image level.
+     *
+     * @param imageLevel - The level of the image for which the resolution is being calculated.
+     * @returns The resolution of the image at the specified level. Resolution is in meters per pixel.
+     */
+    expectedImageLevelResolution = (imageLevel: number) => {
+        return CogDynamicImage.imgageResolutionForLevel(imageLevel, this.mainResolution);
+    }
+
+    /**
+     * Retrieves raster data for a specific zoom level and bounding box.
+     *
+     * @param zoom - The zoom level for which the raster data is requested.
+     * @param bbox - The bounding box defining the area of interest, represented as a tuple. Need to be in mercator (meters)
+     * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
+     * @throws An error if no image is found for the specified zoom level.
+     */
+    imageByBoundsForXYZ = async (zoom: number, bbox: TupleBBOX, tileSize = 256): Promise<ReadRasterResult | null> => {
+
+
+        /**
+         * Checks if the provided GeoTIFF image is tiled.
+         * 
+         * @param image - The GeoTIFF image to check.
+         * @throws {Error} Throws an error if the image is not tiled.
+         */
+        const checkTiledCog = (image: GeoTIFFImage) => {
+            if (!image.isTiled) 
+                throw new Error("The image is not tiled");
+        }
+
+        // check if the COG image bounding box overlaps with the XYZ tile bounding box
+        const bboxOverlap = boundsOverlapCheck(bbox, this.bbox);
+
+        if (!bboxOverlap) {
+            console.info("No overlap between COG image and requested bounding box");
+            return null
+        }
+
+        // guess the image level for the requested zoom level
+        const { imageLevel } = this.expectedImageForTileZoom(zoom);
+
+        // try to read image for the requested level
+        // if the COG has no image at the level, return null
+        const image = await this.tryToReadImage(imageLevel);
+
+        // no image at the level? Than return null
+        if (!image)
+            return null;
+
+        // we need tiled COGs only
+        checkTiledCog(image)
+
+        // select and read rasters from the image
+        // using interleave = return one long array of values
+        // TODO: make interleave optional
+        // TODO: bands etc.
+        const rastersRead = await image.readRasters({
+            bbox,
+            // window: [0, 0, 25, 25],
+            interleave: true,
+            height: tileSize,
+            width: tileSize,
+        })
+
+        // return the rasters
+        return rastersRead
+    }
+
+    /**
+     * Closes the underlying TIFF file and releases any associated resources.
+     * This method should be called when the TIFF file is no longer needed
+     * to ensure proper cleanup and avoid resource leaks.
+     */
+    close() {
+        this.tiff.close()
+    }
+
+    /**
+     * Counts image level resolution in meters per pixel for the given level
+     * The level zero is the highest resolution (max zoom)
+     * Each next level the resolution is divided by 2
+     * @param actualImageLevel Actual image level
+     * @param cogLevelZeroResolution Resolution of the level zero in meters per pixel
+     * @returns Resolution in meters per pixel for the given level
+     */
+    static imgageResolutionForLevel = (actualImageLevel: number, cogLevelZeroResolution: number) => {
+
+        // level zero has max resolution (max zoom)
+        // max zoom means we are closest to the image
+        // it means pixel represents lowest number of meters
+        // as we go out of the image each pixel represents more meters
+        // diffferences are in powers of 2
+        const resolutionMetersPerPixel = +(cogLevelZeroResolution * Math.pow(2, actualImageLevel)).toFixed(3);
+
+        return resolutionMetersPerPixel
+    }
+
+    /**
+     * More for testing and debugging. 
+     * Reads all raster values from the given raster result.
+     * This method iterates through the raster result and logs each value to the console.
+     * It can be useful for debugging purposes to see the values of the raster data.
+     * @param rasterResult Result given by the readRasters method
+     */
+    static readAllRasterValues = (rasterResult: ReadRasterResult) => {
+        for (let i = 0; i < rasterResult.length; i++) {
+            const value = rasterResult[i];
+            console.log(`Value at index ${i}: ${value}`);
+        }
+    }
+
+    /**
+     * Creates a new instance of `CogImage` from a given URL.
+     *
+     * This method fetches a Cloud Optimized GeoTIFF (COG) from the specified URL,
+     * initializes it, and returns an instance of `CogImage`.
+     *
+     * @param url - The URL or string representing the location of the COG file.
+     *              If a `URL` object is provided, it will be converted to a string.
+     * @returns A promise that resolves to an initialized `CogImage` instance.
+     * @throws Will throw an error if the URL is invalid or the COG file cannot be fetched or initialized.
+     */
+    static async fromUrl(url: string | URL) {
+        const tiff = await fromUrl(url instanceof URL ? url.toString() : url);
+        const cogInstance = new CogDynamicImage(tiff);
+        await cogInstance.initialize();
+        return cogInstance;
+    }
+
+    /**
+     * Creates an instance of `CogImage` from a given file path.
+     *
+     * @param path - The file path to the COG (Cloud Optimized GeoTIFF) file.
+     * @returns A promise that resolves to an initialized `CogImage` instance.
+     * @throws Will throw an error if the file cannot be read or the initialization fails.
+     */
+    static async fromFile(path: string) {
+        const tiff = await fromFile(path);
+        const cogInstance = new CogDynamicImage(tiff);
+        await cogInstance.initialize();
+        return cogInstance;
+    }
+
+}
