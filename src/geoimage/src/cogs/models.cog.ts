@@ -227,7 +227,7 @@ export class CogDynamicImage {
      * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
      * @throws An error if no image is found for the specified zoom level.
      */
-    imageByBoundsForXYZ = async (zoom: number, bbox: TupleBBOX, tileSize = 256): Promise<ReadRasterResult | null> => {
+    imageByBoundsForXYZ = async (zoom: number, bbox: TupleBBOX, flatStructure = true, tileSize = 256): Promise<ReadRasterResult | null> => {
 
 
         /**
@@ -264,6 +264,8 @@ export class CogDynamicImage {
         // we need tiled COGs only
         checkCogIsTiled(image)
 
+        console.log(image.getFileDirectory());
+
         // select and read rasters from the image
         // using interleave = raster result one long array of values
         // with false it is an array of arrays (array per band)
@@ -272,7 +274,7 @@ export class CogDynamicImage {
         const rastersRead = await image.readRasters({
             bbox,
             // window: [0, 0, 25, 25],
-            interleave: true,
+            interleave: flatStructure,
             height: tileSize,
             width: tileSize,
         })
