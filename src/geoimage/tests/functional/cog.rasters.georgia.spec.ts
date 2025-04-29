@@ -22,14 +22,16 @@ describe('COG Georgia Rasters for tiles', () => {
         const { bbox } = convertBoundsToMercator(asBounds)
         const tileZoom = 7
 
+        console.log("Projection: ", COG.projection)
+        console.log("Bounds: ", COG.bounds)
+        console.log("Origin: ", COG.origin)
+
         const rasters: ReadRasterResult = await COG.imageByBoundsForXYZ(tileZoom, bbox);
 
         const { height, width } = rasters;
 
         expect(height).toBe(256);
         expect(width).toBe(256);
-
-        CogDynamicImage.debugAllRasterValues(rasters);
 
     });
 

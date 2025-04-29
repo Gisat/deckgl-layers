@@ -6,11 +6,10 @@ import { defaultMapState, defaultMapView } from "../logic/map.defaults";
 import { createOpenstreetMap } from "../logic/layers.basemaps";
 import "../maps.css";
 import { createCogLayer } from "@geoimage/layers/tile.cog";
-import { CogImage } from "@geoimage/cogs/models.cog";
 import { TileLayer } from "@deck.gl/geo-layers";
+import { CogDynamicImage } from "@geoimage/cogs/models.cog";
 
-const useTestCogUrl = () => "https://gisat-gis.eu-central-1.linodeobjects.com/eman/versions/v3/DEM/DEM_COP30_float32_wgs84_deflate_cog_float32.tif"
-
+export const useTestCogUrl = () => "https://gisat-gis.eu-central-1.linodeobjects.com/bsadri/test_raster/COG/LC_2021_all_Georgia_WEST3940_ZOOM6_test1_defl_COG256.tif"
 /**
  * CogMap map component (client side)
  * This component is used to render the map with DeckGL
@@ -27,7 +26,7 @@ export const CogMap = () => {
         const fetchCog = async () => {
 
             // Load the COG image from the URL
-            const usedCog = await CogImage.fromUrl(useTestCogUrl());
+            const usedCog = await CogDynamicImage.fromUrl(useTestCogUrl());
             
             // Create the COG layer using the loaded image
             setCogLayer(createCogLayer({

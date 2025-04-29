@@ -12,7 +12,7 @@ describe('COG and Tiles zoom synchronisation', () => {
         xyz = new TileMagicXYZ(256, 22);
     });
 
-    test('COG and XYZ zooms and levels', async () => {
+    test('XYZ zooms and levels', async () => {
         const checkedResolutions = [
             156500,
             78200,

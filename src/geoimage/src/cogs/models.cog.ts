@@ -2,6 +2,7 @@ import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geot
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
 import { bboxToBounds, boundsOverlapCheck } from "@geoimage/shared/helpers/gis.transform";
+import { convertBoundsToMercator } from "@geoimage/shared/helpers/gis.mercator";
 
 /**
  * Represents a mapping between an image level and its corresponding resolution.
@@ -39,6 +40,10 @@ export class CogDynamicImage {
     // bbox of the COG image in meters
     // it is the same for all levels
     bbox: TupleBBOX;
+
+    // the COG image is in projected CRS
+    projection: string;
+
 
     // bounds of the COG image in meters
     // it is the same for all levels
@@ -96,6 +101,12 @@ export class CogDynamicImage {
         this.origin = mainImage.getOrigin() as [number, number, number];
         this.bbox = mainImage.getBoundingBox() as [number, number, number, number];
         this.bounds = bboxToBounds(this.bbox);
+
+        // projection of the COG image is same for all levels
+        const geoKeys = mainImage.getGeoKeys();
+        this.projection = geoKeys.ProjectedCSTypeGeoKey || geoKeys.GeographicTypeGeoKey 
+        if(!this.projection) 
+            throw new Error("No projection found in the COG image");
 
         // COG image resolution
         // tiled COGs has same re
@@ -223,12 +234,11 @@ export class CogDynamicImage {
      * Retrieves raster data for a specific zoom level and bounding box.
      *
      * @param zoom - The zoom level for which the raster data is requested.
-     * @param bbox - The bounding box defining the area of interest, represented as a tuple. Need to be in mercator (meters)
+     * @param bbox - The bounding box defining the area of interest, represented as a tuple. Declared in web mercator (longitude, latitude).
      * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
      * @throws An error if no image is found for the specified zoom level.
      */
     imageByBoundsForXYZ = async (zoom: number, bbox: TupleBBOX, flatStructure = true, tileSize = 256): Promise<ReadRasterResult | null> => {
-
 
         /**
          * Checks if the provided GeoTIFF image is tiled.
@@ -241,10 +251,13 @@ export class CogDynamicImage {
                 throw new Error("The image is not tiled");
         }
 
+        const bounds = bboxToBounds(bbox);
+        const { bbox: bboxMercator } = convertBoundsToMercator(bounds)
+
         // check if the COG image bounding box overlaps with the XYZ tile bounding box
         // the Geotiff library always returns a result
         // but we don't need it in the case of no overlap
-        const bboxOverlap = boundsOverlapCheck(bbox, this.bbox);
+        const bboxOverlap = boundsOverlapCheck(bboxMercator, this.bbox);
 
         if (!bboxOverlap) {
             console.info("No overlap between COG image and requested bounding box");
@@ -264,7 +277,8 @@ export class CogDynamicImage {
         // we need tiled COGs only
         checkCogIsTiled(image)
 
-        console.log(image.getFileDirectory());
+        console.log("z: ", zoom)
+        console.log("widts: ", image.getWidth())
 
         // select and read rasters from the image
         // using interleave = raster result one long array of values
@@ -272,8 +286,8 @@ export class CogDynamicImage {
         // TODO: make interleave optional
         // TODO: bands etc.
         const rastersRead = await image.readRasters({
-            bbox,
-            // window: [0, 0, 25, 25],
+            bbox: bboxMercator,
+            // window: [256, 256, 512, 512],
             interleave: flatStructure,
             height: tileSize,
             width: tileSize,
