@@ -80,8 +80,15 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
 
         // Fetch raster data for the given tile coordinates
         const rasterResults = await cogImage.imageByBoundsForXYZ(z, bbox);
+
         if (!rasterResults) {
           console.info('No raster data available for tile:', tile);
+          return null;
+        }
+
+
+        if (rasterResults.width !== tileSize || rasterResults.height !== tileSize) {
+          console.error('Raster data dimensions do not match tile size:', rasterResults.width, rasterResults.height);
           return null;
         }
 
@@ -93,9 +100,9 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
         valueMap.set(0, [0, 0, 0, 255]); // Black
         valueMap.set(255, [0, 0, 0, 255]); // Black
 
-        valueMap.set(11, [255, 0, 0, 255]); // Black
-        valueMap.set(12, [0, 255, 0, 255]); // Black
-        valueMap.set(13, [0, 0, 255, 255]); // Black
+        valueMap.set(11, [255, 0, 0, 255]); // Red for 11
+        valueMap.set(12, [0, 255, 0, 255]); // Green for 12
+        valueMap.set(13, [0, 0, 255, 255]); // Blue for 13
 
         for (let i = 0; i < rasterData.length; i += 4) {
 
