@@ -286,8 +286,8 @@ export class CogDynamicImage {
         // TODO: make interleave optional
         // TODO: bands etc.
         const rastersRead = await image.readRasters({
-            bbox: bboxMercator,
-            // window: [256, 256, 512, 512],
+            // bbox: bboxMercator,
+            window: [0, 0, 256, 256],
             interleave: flatStructure,
             height: tileSize,
             width: tileSize,

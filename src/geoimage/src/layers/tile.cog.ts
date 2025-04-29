@@ -97,18 +97,26 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
 
         const valueMap: Map<number, [number, number, number, number]> = new Map();
 
-        valueMap.set(0, [0, 0, 0, 255]); // Black
-        valueMap.set(255, [0, 0, 0, 255]); // Black
+        const randomR = Math.floor(Math.random() * 256);
+        const randomG = Math.floor(Math.random() * 256);
+        const randomB = Math.floor(Math.random() * 256);
+        const alpha = 170;
 
-        valueMap.set(11, [255, 0, 0, 255]); // Red for 11
-        valueMap.set(12, [0, 255, 0, 255]); // Green for 12
-        valueMap.set(13, [0, 0, 255, 255]); // Blue for 13
+        // valueMap.set(0, [0, 0, 0, 255]); // Black
+        // valueMap.set(255, [0, 0, 0, 255]); // Black
+
+        valueMap.set(0, [randomR, randomG, randomB, alpha]); // Black
+        valueMap.set(255, [randomR, randomG, randomB, alpha]); // Black
+
+        valueMap.set(11, [255, 0, 0, alpha]); // Red for 11
+        valueMap.set(12, [0, 255, 0, alpha]); // Green for 12
+        valueMap.set(13, [0, 0, 255, alpha]); // Blue for 13
 
         let rasterDataIdx = 0;
         for (let i = 0; i < output.length; i += 4) {
 
           const rasterValue = rasterData[rasterDataIdx]; // 0–255 assumed
-          const [r, g, b, a] = valueMap.get(rasterValue) || [0, 0, 0, 255]; // Default to black if not found
+          const [r, g, b, a] = valueMap.get(rasterValue) || [0, 0, 0, alpha]; // Default to black if not found
 
           output[i] = r; // Red
           output[i + 1] = g; // Green
