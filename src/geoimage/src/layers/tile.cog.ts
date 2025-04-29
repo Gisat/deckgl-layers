@@ -115,7 +115,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
           output[i + 3] = a; // Alpha
         }
 
-        const imageData = new ImageData(output, 256, 256); // TODO: by tile size
+        const imageData = new ImageData(output, tileSize, tileSize);
         const bitmap = await createImageBitmap(imageData); // optional: wrap in async
 
         return {
