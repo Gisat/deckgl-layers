@@ -104,15 +104,18 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
         valueMap.set(12, [0, 255, 0, 255]); // Green for 12
         valueMap.set(13, [0, 0, 255, 255]); // Blue for 13
 
-        for (let i = 0; i < rasterData.length; i += 4) {
+        let rasterDataIdx = 0;
+        for (let i = 0; i < output.length; i += 4) {
 
-          const rasterValue = rasterData[i]; // 0–255 assumed
+          const rasterValue = rasterData[rasterDataIdx]; // 0–255 assumed
           const [r, g, b, a] = valueMap.get(rasterValue) || [0, 0, 0, 255]; // Default to black if not found
 
           output[i] = r; // Red
           output[i + 1] = g; // Green
           output[i + 2] = b; // Blue
           output[i + 3] = a; // Alpha
+
+          rasterDataIdx += 1;
         }
 
         const imageData = new ImageData(output, tileSize, tileSize);
