@@ -69,3 +69,15 @@ export const convertMercatorBoundsToCoordinates = (bounds: BoundingBox) => {
         ] as TupleBBOX
     }
 }
+
+
+export const differenceBetweenPointsInMercator =
+    (originPointMeters: [number, number], movePointMeters: [number, number]): [number, number] => {
+        const [oX, oY] = originPointMeters;
+        const [mX, mY] = movePointMeters;
+
+        const deltaX = mX - oX;
+        const deltaY = mY - oY;
+
+        return [deltaX, deltaY];
+    }

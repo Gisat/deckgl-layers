@@ -109,4 +109,35 @@ export class TileMagicXYZ {
             north: maxy, // top (north) in meters
         };
     };
+
+    tileXYToTopLeftMercator = ([x, y, z]: [x: number, y: number, z: number], tileSize = 256): { x: number, y: number } => {
+        const originShift = (tileSize / 2) * MERCATOR_ZERO_256_RESOLUTION;
+    
+        const resolution = this.tileZoomResolutionMap.get(z);
+        if (!resolution) {
+            throw new Error(`Resolution not found for zoom level ${z}`);
+        }
+    
+        const topLeftX = x * tileSize * resolution - originShift;
+        const topLeftY = originShift - y * tileSize * resolution;
+    
+        return {
+            x: topLeftX,
+            y: topLeftY,
+        };
+    };
+
+    metersToTile(xMeters: number, yMeters: number, zoom: number, tileSize = 256): [number, number, number] {
+        const originShiftMeters = 20037508.342789244;
+        const initialResolution = (2 * originShiftMeters) / tileSize;
+        const resolution = initialResolution / Math.pow(2, zoom);
+      
+        const pixelX = (xMeters + originShiftMeters) / resolution;
+        const pixelY = (originShiftMeters - yMeters) / resolution;
+      
+        const tileX = Math.floor(pixelX / tileSize);
+        const tileY = Math.floor(pixelY / tileSize);
+      
+        return [tileX, tileY, zoom];
+      }
 }

@@ -1,8 +1,7 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
 import { CogDynamicImage } from '@geoimage/cogs/models.cog';
-import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
-import { bboxToBounds, boundsToBbox } from '@geoimage/shared/helpers/gis.transform';
+import { boundsToBbox } from '@geoimage/shared/helpers/gis.transform';
 import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
 
 interface CogLayerProps {
@@ -79,13 +78,15 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
         const bbox = boundsToBbox(webProjectionBounds as BoundingBox);
 
         // Fetch raster data for the given tile coordinates
-        const rasterResults = await cogImage.imageByBoundsForXYZ(z, bbox);
+        const rasterResults = await cogImage.imageByBoundsForXYZ(
+          z,
+          bbox
+        )
 
         if (!rasterResults) {
           console.info('No raster data available for tile:', tile);
           return null;
         }
-
 
         if (rasterResults.width !== tileSize || rasterResults.height !== tileSize) {
           console.error('Raster data dimensions do not match tile size:', rasterResults.width, rasterResults.height);
@@ -140,7 +141,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
 
     renderSubLayers: (props) => {
 
-      console.log("2, Props", props);
+      // console.log("2, Props", props);
       const { data, tile } = props;
 
       const { boundingBox } = tile;
