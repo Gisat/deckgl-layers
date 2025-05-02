@@ -1,7 +1,7 @@
 import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
-import { bboxIntersectionPart, bboxToBounds, boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
+import { bboxIntersectionPart, bboxToBounds, isBoundsOverlap, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
 import { convertBoundsToMercator, differenceBetweenPointsInMercator } from "@geoimage/shared/helpers/gis.mercator";
 
 /**
@@ -246,6 +246,9 @@ export class CogDynamicImage {
      */
     imageByBoundsForXYZ = async (zoom: number, bboxWebCoordinates: TupleBBOX, flatStructure = true, tileSize = 256): Promise<ReadRasterResult | null> => {
 
+
+        const renderingIndex = Math.floor(Math.random() * 10000)
+
         /**
          * Checks if the provided GeoTIFF image is tiled.
          * 
@@ -258,25 +261,23 @@ export class CogDynamicImage {
         }
 
         const bounds = bboxToBounds(bboxWebCoordinates);
-        const { bbox: bboxMercator, bounds: boundsMercator } = convertBoundsToMercator(bounds)
+        const { bbox: bboxTileMercator } = convertBoundsToMercator(bounds)
 
         // check if the COG image bounding box overlaps with the XYZ tile bounding box
         // the Geotiff library always returns a result
         // but we don't need it in the case of no overlap
-        const bboxOverlap = boundsOverlapCheck(bboxMercator, this.bbox);
+        const bboxOverlap = isBoundsOverlap(bboxTileMercator, this.bbox);
 
         if (!bboxOverlap) {
-            console.info("No overlap between COG image and requested bounding box");
             return null
         }
 
-        console.log("bboxMercator", bboxMercator)
-        console.log("bbox", this.bbox)
+        console.log("Tile bbox", bboxTileMercator, renderingIndex)
+        console.log("Image bbox", this.bbox, renderingIndex)
 
-        const { bbox: bboxImageSection, boundingBox: boundsImageSection } = bboxIntersectionPart(bboxMercator, this.bbox);
+        const { bbox: bboxImageSection } = bboxIntersectionPart(bboxTileMercator, this.bbox);
 
-        console.log("bboxImageSection", bboxImageSection)
-        console.log("boundsImageSection", boundsImageSection)
+        console.log("Shared Section bbox", bboxImageSection, renderingIndex)
 
         // guess the image level for the requested XYZ tile zoom level
         const { imageLevel } = this.expectedImageForTileZoom(zoom);
@@ -294,7 +295,7 @@ export class CogDynamicImage {
         const expectedResolution = this.expectedImageLevelResolution(imageLevel);
         const windowSelection = this.bboxToWindow(bboxImageSection, this.origin, [expectedResolution, expectedResolution], [image.getWidth(), image.getHeight()]);
 
-        console.log("Window selection", windowSelection)
+        console.log("Window selection", windowSelection, renderingIndex)
 
         // select and read rasters from the image
         // using interleave = raster result one long array of values
@@ -302,9 +303,8 @@ export class CogDynamicImage {
         // TODO: make interleave optional
         // TODO: bands etc.
         const rastersRead = await image.readRasters({
-            // bbox: bboxMercator, // Not working for some reason
-            // window: windowSelection,
-            window: [0, 0, 256, 256],
+            // bbox: bboxMercator, // INFO: Not working for some reason
+            window: windowSelection,
             interleave: flatStructure,
             height: tileSize,
             width: tileSize,
@@ -425,23 +425,23 @@ export class CogDynamicImage {
             return [pixelX, pixelY];
         };
 
+        const noNegative = (value: number) => Math.max(0, value);
+
+
         const [minX, minY, maxX, maxY] = imagePartBox;
 
-        const [px0, py0] = mercatorToPixel(minX, maxY);
-        const [px1, py1] = mercatorToPixel(maxX, minY);
+        const [px0, py0] = mercatorToPixel(minX, maxY).map(val => Math.abs(val));
+        const [px1, py1] = mercatorToPixel(maxX, minY).map(val => Math.abs(val));
 
         // Compute unclamped window
-        const left = Math.min(px0, px1);
-        const right = Math.max(px0, px1);
-        const top = Math.min(py0, py1);
-        const bottom = Math.max(py0, py1);
+        const pxOriginX = Math.min(px0, px1)
+        const pxEndX = Math.max(px0, px1)
 
-        // Check for no overlap
-        if (right < 0 || bottom < 0 || left >= imageWidth || top >= imageHeight) {
-            return null;
-        }
+        const pxOriginY = Math.min(py0, py1)
+        const pxEndY = Math.max(py0, py1)
 
-        return [px0, py0, px1, py1];
+
+        return [pxOriginX, pxOriginY, pxEndX, pxEndY]
     }
 
 }

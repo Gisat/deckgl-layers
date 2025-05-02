@@ -17,8 +17,8 @@ export const convertBoundsToMercator = (bounds: BoundingBox | TupleBBOX) => {
     if(Array.isArray(bounds)) 
         bounds = bboxToBounds(bounds);
 
-    const bottomLeft = proj4(WGS84, WEB_MERCATOR, [bounds.west, bounds.south]);
-    const topRight = proj4(WGS84, WEB_MERCATOR, [bounds.east, bounds.north]);
+    const bottomLeft = proj4(WGS84, WEB_MERCATOR, [bounds.west, bounds.south]).map(value => Math.floor(value));
+    const topRight = proj4(WGS84, WEB_MERCATOR, [bounds.east, bounds.north]).map(value => Math.floor(value));
 
     const mercatorBBox = {
         minX: bottomLeft[0],
@@ -48,8 +48,8 @@ export const convertMercatorBoundsToCoordinates = (bounds: BoundingBox | TupleBB
         bounds = bboxToBounds(bounds);
 
 
-    const bottomLeft = proj4(WEB_MERCATOR, WGS84, [bounds.west, bounds.south]);
-    const topRight = proj4(WEB_MERCATOR, WGS84, [bounds.east, bounds.north]);
+    const bottomLeft = proj4(WEB_MERCATOR, WGS84, [bounds.west, bounds.south])
+    const topRight = proj4(WEB_MERCATOR, WGS84, [bounds.east, bounds.north])
 
     const mercatorBBox = {
         minX: bottomLeft[0],

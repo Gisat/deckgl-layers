@@ -84,7 +84,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
         )
 
         if (!rasterResults) {
-          console.info('No raster data available for tile:', tile);
+          // console.info('No raster data available for tile:', tile);
           return null;
         }
 

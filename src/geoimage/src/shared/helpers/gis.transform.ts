@@ -31,7 +31,7 @@ export const boundsToBbox = (bounds: BoundingBox): TupleBBOX => {
 }
 
 
-export const boundsOverlapCheck = (bboxA: TupleBBOX | BoundingBox, bboxB: TupleBBOX | BoundingBox) => {
+export const isBoundsOverlap = (bboxA: TupleBBOX | BoundingBox, bboxB: TupleBBOX | BoundingBox) => {
 
     // Convert to TupleBBOX if necessary
     if (!Array.isArray(bboxA))
@@ -49,7 +49,7 @@ export const boundsOverlapCheck = (bboxA: TupleBBOX | BoundingBox, bboxB: TupleB
     );
 }
 
-export const bboxContains = (outer: TupleBBOX, inner: TupleBBOX): boolean => {
+export const isBoundsContains = (outer: TupleBBOX, inner: TupleBBOX): boolean => {
     return (
         inner[0] >= outer[0] &&  // inner.minX >= outer.minX
         inner[1] >= outer[1] &&  // inner.minY >= outer.minY
