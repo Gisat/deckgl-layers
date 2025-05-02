@@ -293,7 +293,12 @@ export class CogDynamicImage {
         checkCogIsTiled(image)
 
         const expectedResolution = this.expectedImageLevelResolution(imageLevel);
-        const windowSelection = this.bboxToWindow(bboxImageSection, this.origin, [expectedResolution, expectedResolution], [image.getWidth(), image.getHeight()]);
+        
+        const windowSelection = CogDynamicImage.bboxToWindow(
+            bboxImageSection, 
+            this.origin, 
+            [expectedResolution, expectedResolution]
+        );
 
         console.log("Window selection", windowSelection, renderingIndex)
 
@@ -312,6 +317,52 @@ export class CogDynamicImage {
 
         // return the raster result
         return rastersRead
+    }
+
+    static bboxToWindow(imagePartBox: TupleBBOX, origin: [number, number, number], resolution: [number, number]) {
+        
+        // COG image origin
+        const [originX, originY] = origin;
+
+        // COG level 0 resolution (max zoom)
+        const [resX, resY] = resolution;
+
+        /**
+         * Counts difference in meters between the COG image origin and the given coordinates
+         * Than it divides the difference by the resolution (m /px), so we get the pixel number 
+         * @param xMercator x coordinate in meters
+         * @param yMercator y coordinate in meters
+         * @returns 
+         */
+        const mercatorToPixel = (xMercator: number, yMercator: number) => {
+            const pixelX = Math.floor((xMercator - originX) / resX);
+            const pixelY = Math.floor((yMercator - originY) / resY);
+            return [pixelX, pixelY];
+        };
+
+        // decompose bbox of shared part between the COG image and the XYZ tile
+        const [minX, minY, maxX, maxY] = imagePartBox;
+
+        // convert meters to pixel coordinates
+        // and abs them to get the positive values (TODO: is that ok?)
+        const [px0, py0] = mercatorToPixel(minX, maxY).map(val => Math.abs(val));
+        const [px1, py1] = mercatorToPixel(maxX, minY).map(val => Math.abs(val));
+
+        //... but the coordinates can be reversed
+        // so we need to find the min and max values
+        // to start and end the window
+
+        // X axis of the image
+        const pxOriginX = Math.min(px0, px1) // from the left
+        const pxEndX = Math.max(px0, px1) // to the right
+
+        // Y axis of the image
+        const pxOriginY = Math.min(py0, py1) // from the top
+        const pxEndY = Math.max(py0, py1) // to the bottom
+
+
+        // return as a window selection for COG rater reading
+        return [pxOriginX, pxOriginY, pxEndX, pxEndY]
     }
 
     /**
@@ -412,36 +463,6 @@ export class CogDynamicImage {
         const cogInstance = new CogDynamicImage(tiff);
         await cogInstance.initialize();
         return cogInstance;
-    }
-
-    private bboxToWindow(imagePartBox: TupleBBOX, origin: [number, number, number], resolution: [number, number], imageDimansionsPx: [number, number]) {
-        const [originX, originY] = origin;
-        const [resX, resY] = resolution;
-        const [imageWidth, imageHeight] = imageDimansionsPx;
-
-        const mercatorToPixel = (xMercator: number, yMercator: number) => {
-            const pixelX = Math.floor((xMercator - originX) / resX);
-            const pixelY = Math.floor((yMercator - originY) / resY);
-            return [pixelX, pixelY];
-        };
-
-        const noNegative = (value: number) => Math.max(0, value);
-
-
-        const [minX, minY, maxX, maxY] = imagePartBox;
-
-        const [px0, py0] = mercatorToPixel(minX, maxY).map(val => Math.abs(val));
-        const [px1, py1] = mercatorToPixel(maxX, minY).map(val => Math.abs(val));
-
-        // Compute unclamped window
-        const pxOriginX = Math.min(px0, px1)
-        const pxEndX = Math.max(px0, px1)
-
-        const pxOriginY = Math.min(py0, py1)
-        const pxEndY = Math.max(py0, py1)
-
-
-        return [pxOriginX, pxOriginY, pxEndX, pxEndY]
     }
 
 }
