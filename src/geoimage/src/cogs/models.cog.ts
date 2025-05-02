@@ -1,7 +1,7 @@
 import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
-import { bboxToBounds, boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
+import { bboxIntersectionPart, bboxToBounds, boundsOverlapCheck, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
 import { convertBoundsToMercator, differenceBetweenPointsInMercator } from "@geoimage/shared/helpers/gis.mercator";
 
 /**
@@ -273,6 +273,10 @@ export class CogDynamicImage {
         console.log("bboxMercator", bboxMercator)
         console.log("bbox", this.bbox)
 
+        const { bbox: bboxImageSection, boundingBox: boundsImageSection } = bboxIntersectionPart(bboxMercator, this.bbox);
+
+        console.log("bboxImageSection", bboxImageSection)
+        console.log("boundsImageSection", boundsImageSection)
 
         // guess the image level for the requested XYZ tile zoom level
         const { imageLevel } = this.expectedImageForTileZoom(zoom);
@@ -288,7 +292,7 @@ export class CogDynamicImage {
         checkCogIsTiled(image)
 
         const expectedResolution = this.expectedImageLevelResolution(imageLevel);
-        const windowSelection = this.bboxToWindow(bboxMercator, this.origin, [expectedResolution, expectedResolution], [image.getWidth(), image.getHeight()]);
+        const windowSelection = this.bboxToWindow(bboxImageSection, this.origin, [expectedResolution, expectedResolution], [image.getWidth(), image.getHeight()]);
 
         console.log("Window selection", windowSelection)
 
@@ -299,8 +303,8 @@ export class CogDynamicImage {
         // TODO: bands etc.
         const rastersRead = await image.readRasters({
             // bbox: bboxMercator, // Not working for some reason
-            window: windowSelection,
-            // window: [0, 0, 256, 256],
+            // window: windowSelection,
+            window: [0, 0, 256, 256],
             interleave: flatStructure,
             height: tileSize,
             width: tileSize,
@@ -410,7 +414,7 @@ export class CogDynamicImage {
         return cogInstance;
     }
 
-    private bboxToWindow(bboxInMeters: TupleBBOX, origin: [number, number, number], resolution: [number, number], imageDimansionsPx: [number, number]) {
+    private bboxToWindow(imagePartBox: TupleBBOX, origin: [number, number, number], resolution: [number, number], imageDimansionsPx: [number, number]) {
         const [originX, originY] = origin;
         const [resX, resY] = resolution;
         const [imageWidth, imageHeight] = imageDimansionsPx;
@@ -421,7 +425,7 @@ export class CogDynamicImage {
             return [pixelX, pixelY];
         };
 
-        const [minX, minY, maxX, maxY] = bboxInMeters;
+        const [minX, minY, maxX, maxY] = imagePartBox;
 
         const [px0, py0] = mercatorToPixel(minX, maxY);
         const [px1, py1] = mercatorToPixel(maxX, minY);

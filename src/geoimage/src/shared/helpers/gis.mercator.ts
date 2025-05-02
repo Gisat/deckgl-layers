@@ -1,5 +1,9 @@
 import proj4 from 'proj4';
 import { BoundingBox, TupleBBOX } from './gis.types';
+import { bboxToBounds, boundsToBbox } from './gis.transform';
+
+const WGS84 = 'EPSG:4326';
+const WEB_MERCATOR = 'EPSG:3857';
 
 /**
  * Mercator resolution for the level 0 in COG image
@@ -8,13 +12,13 @@ import { BoundingBox, TupleBBOX } from './gis.types';
 export const MERCATOR_ZERO_256_RESOLUTION = 156543.03125;
 
 
-export const convertBoundsToMercator = (bounds: BoundingBox) => {
+export const convertBoundsToMercator = (bounds: BoundingBox | TupleBBOX) => {
 
-    const wgs84 = 'EPSG:4326';
-    const webMerc = 'EPSG:3857';
+    if(Array.isArray(bounds)) 
+        bounds = bboxToBounds(bounds);
 
-    const bottomLeft = proj4(wgs84, webMerc, [bounds.west, bounds.south]);
-    const topRight = proj4(wgs84, webMerc, [bounds.east, bounds.north]);
+    const bottomLeft = proj4(WGS84, WEB_MERCATOR, [bounds.west, bounds.south]);
+    const topRight = proj4(WGS84, WEB_MERCATOR, [bounds.east, bounds.north]);
 
     const mercatorBBox = {
         minX: bottomLeft[0],
@@ -38,14 +42,14 @@ export const convertBoundsToMercator = (bounds: BoundingBox) => {
         ] as TupleBBOX
     }
 }
-export const convertMercatorBoundsToCoordinates = (bounds: BoundingBox) => {
+export const convertMercatorBoundsToCoordinates = (bounds: BoundingBox | TupleBBOX) => {
 
-    const wgs84 = 'EPSG:4326';
-    const webMerc = 'EPSG:3857';
+    if(Array.isArray(bounds)) 
+        bounds = bboxToBounds(bounds);
 
 
-    const bottomLeft = proj4(webMerc, wgs84, [bounds.west, bounds.south]);
-    const topRight = proj4(webMerc, wgs84, [bounds.east, bounds.north]);
+    const bottomLeft = proj4(WEB_MERCATOR, WGS84, [bounds.west, bounds.south]);
+    const topRight = proj4(WEB_MERCATOR, WGS84, [bounds.east, bounds.north]);
 
     const mercatorBBox = {
         minX: bottomLeft[0],
