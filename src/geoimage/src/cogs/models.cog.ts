@@ -240,11 +240,11 @@ export class CogDynamicImage {
      * Retrieves raster data for a specific zoom level and bounding box.
      *
      * @param zoom - The zoom level for which the raster data is requested.
-     * @param bboxWebCoordinates - The bounding box defining the area of interest, represented as a tuple. Declared in web mercator (longitude, latitude).
+     * @param boundOfTheTile - The bounding box defining the area of interest, represented as a tuple. Declared in web mercator (longitude, latitude).
      * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
      * @throws An error if no image is found for the specified zoom level.
      */
-    imageByBoundsForXYZ = async (zoom: number, bboxWebCoordinates: TupleBBOX, flatStructure = true, tileSize = 256): Promise<ReadRasterResult | null> => {
+    imageByBoundsForXYZ = async (zoom: number, boundOfTheTile: BoundingBox, flatStructure = true, tileSize = 256): Promise<ReadRasterResult | null> => {
 
 
         const renderingIndex = Math.floor(Math.random() * 10000)
@@ -260,8 +260,7 @@ export class CogDynamicImage {
                 throw new Error("The image is not tiled");
         }
 
-        const bounds = bboxToBounds(bboxWebCoordinates);
-        const { bbox: bboxTileMercator } = convertBoundsToMercator(bounds)
+        const { bbox: bboxTileMercator } = convertBoundsToMercator(boundOfTheTile)
 
         // check if the COG image bounding box overlaps with the XYZ tile bounding box
         // the Geotiff library always returns a result
