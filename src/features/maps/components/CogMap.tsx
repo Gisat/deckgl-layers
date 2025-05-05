@@ -6,37 +6,42 @@ import { defaultMapState, defaultMapView } from "../logic/map.defaults";
 import { createOpenstreetMap } from "../logic/layers.basemaps";
 import "../maps.css";
 import { createCogLayer } from "@geoimage/layers/tile.cog";
-import { CogImage } from "@geoimage/cogs/models.cog";
 import { TileLayer } from "@deck.gl/geo-layers";
+import { CogDynamicImage } from "@geoimage/cogs/models.cog";
+import { PathLayer } from "@deck.gl/layers";
+import { createBoundingBoxLayer } from "@geoimage/layers/path.bbox";
+import { RenderByValueDecider } from "@geoimage/shared/rendering/rendering.types";
 
-const useTestCogUrl = () => "https://gisat-gis.eu-central-1.linodeobjects.com/eman/versions/v3/DEM/DEM_COP30_float32_wgs84_deflate_cog_float32.tif"
+interface CogMapProps {
+    cogUrl: string;
+    renderLogicMap: RenderByValueDecider;
+    debugMode?: boolean;
+}
 
-/**
- * CogMap map component (client side)
- * This component is used to render the map with DeckGL
- * It's the DeckGL map wrapper with dynamic DeckGL map size
- * @returns {JSX.Element} Wrapped map component
- */
-export const CogMap = () => {
-    // list of layers to be rendered
-    // TODO: Now its harcoded, but later might be dynamic
+export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
 
+    // TODO: custom hook?
     const [cogLayer, setCogLayer] = useState<TileLayer | null>(null);
+    const [bboxLayer, setBoxLayer] = useState<PathLayer | null>(null);
 
     useEffect(() => {
         const fetchCog = async () => {
 
             // Load the COG image from the URL
-            const usedCog = await CogImage.fromUrl(useTestCogUrl());
-            
+            const usedCog = await CogDynamicImage.fromUrl(cogUrl);
+
             // Create the COG layer using the loaded image
             setCogLayer(createCogLayer({
                 id: "cog-layer",
                 cogImage: usedCog,
                 tileSize: 256,
                 minZoom: 0,
-                maxZoom: 20
+                maxZoom: 20,
+                renderLogicMap,
+                debugMode
             }))
+
+            debugMode && setBoxLayer(createBoundingBoxLayer(usedCog.bbox, true))
         };
         fetchCog();
     }, []);
@@ -49,7 +54,8 @@ export const CogMap = () => {
                 layers={
                     [
                         createOpenstreetMap(),
-                        cogLayer
+                        cogLayer,
+                        bboxLayer
                     ]
                 }
                 controller={true}

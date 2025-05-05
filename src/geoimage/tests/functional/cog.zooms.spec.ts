@@ -6,13 +6,13 @@ describe('COG and Tiles zoom synchronisation', () => {
 
     let COG: CogDynamicImage;
     let xyz: TileMagicXYZ;
-    
+
     beforeAll(async () => {
         COG = await CogDynamicImage.fromUrl(useTestCogUrl());
         xyz = new TileMagicXYZ(256, 22);
     });
 
-    test('COG and XYZ zooms and levels', async () => {
+    test('XYZ zooms and levels', async () => {
         const checkedResolutions = [
             156500,
             78200,
@@ -63,6 +63,19 @@ describe('COG and Tiles zoom synchronisation', () => {
         expect(xyzLevel).to.be.gt(imageLevel)
         expect(xyzResolution).toEqual(imageResolution)
     });
+
+    test("COG origins to tile indexes", async () => {
+        console.log("---COG origin to XYZ---")
+        const [x, y, z] = xyz.metersToTile(COG.origin[0], COG.origin[1], COG.xyzMainImageZoom)
+
+        expect(x).toEqual(9984)
+        expect(y).toEqual(5888)
+        expect(z).toEqual(14)
+
+        console.log("COG origin", COG.origin)
+        console.log("COG zoom", COG.xyzMainImageZoom)
+        console.log("XYZ tile", x, y)
+    })
 
     afterAll(() => {
         COG.close()

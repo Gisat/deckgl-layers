@@ -1,6 +1,6 @@
 import { useTestCogUrl } from '@test/tools/fixtures.cogs';
 import { TileMagicXYZ } from '@geoimage/tiles/models.tileMagic';
-import { convertMercatorBoundsToCoordinates } from '@geoimage/shared/helpers/gis.mercator';
+import { convertMercatorBoundsToCoordinates } from '@geoimage/shared/gis/gis.mercator';
 import { CogDynamicImage } from '@geoimage/cogs/models.cog';
 
 describe('BBoxes of the COG and XYZ operations', () => {

@@ -1,18 +1,28 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
-import { CogImage } from '@geoimage/cogs/_outdated.models.cog';
-import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
-import { boundsToBbox } from '@geoimage/shared/helpers/gis.transform';
-import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
+import { CogDynamicImage } from '@geoimage/cogs/models.cog';
+import { BoundingBox } from '@geoimage/shared/gis/gis.types';
+import { RenderByValueDecider } from '@geoimage/shared/rendering/rendering.types';
+import { ReadRasterResult } from 'geotiff';
 
+/**
+ * Interface for the properties of the CogLayer.
+ */
 interface CogLayerProps {
   id: string;
-  cogImage: CogImage;
+  cogImage: CogDynamicImage;
+  renderLogicMap: RenderByValueDecider;
   tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
+  debugMode?: boolean;
 }
 
+
+/**
+ * Default values for the layer configuration.
+ * These values are used if the user does not provide specific values.
+ */
 const LAYER_DEFAULTS = {
   tileSize: 256,
   minZoom: 0,
@@ -21,46 +31,102 @@ const LAYER_DEFAULTS = {
 
 
 /**
- * Asynchronously creates a COG (Cloud Optimized GeoTIFF) tile layer for use with Deck.gl.
+ * Creates a Deck.gl TileLayer for rendering Cloud Optimized GeoTIFF (COG) images.
  *
- * This function loads a COG image from the provided URL and defines a `TileLayer` 
- * that fetches raster data for individual tiles and renders them using a `BitmapLayer`.
+ * This function generates a TileLayer that processes raster data from COG images
+ * and converts it into RGBA bitmaps for rendering. It supports custom rendering
+ * logic, zoom levels, and debugging options.
  *
- * @param props - The properties required to configure the COG layer.
- * @param props.url - The URL of the COG image to load.
- * @param props.id - A unique identifier for the layer.
- * @param props.tileSize - The size of each tile in pixels. Defaults to `LAYER_DEFAULTS.tileSize`.
- * @param props.minZoom - The minimum zoom level for the layer. Defaults to `LAYER_DEFAULTS.minZoom`.
- * @param props.maxZoom - The maximum zoom level for the layer. Defaults to `LAYER_DEFAULTS.maxZoom`.
+ * @param cogImage - An object providing access to the COG image data, including methods
+ *                   for fetching raster data by tile coordinates.
+ * @param id - A unique identifier for the layer.
+ * @param tileSize - The size of each tile in pixels. Defaults to a predefined value if not provided.
+ * @param maxZoom - The maximum zoom level for the layer. Defaults to a predefined value if not provided.
+ * @param minZoom - The minimum zoom level for the layer. Defaults to a predefined value if not provided.
+ * @param renderLogicMap - A mapping of raster values to RGBA color arrays. This map defines how
+ *                         raster values are converted into colors for rendering.
+ * @param debugMode - A boolean flag to enable debug mode. When enabled, tiles are rendered with
+ *                    random colors for easier debugging.
  *
- * @returns A promise that resolves to a configured `TileLayer` instance.
- *
- * @remarks
- * - The `getTileData` function fetches raster data for each tile based on its coordinates.
- * - The `renderSubLayers` function converts raster data into an `ImageBitmap` or `ImageData` 
- *   and renders it using a `BitmapLayer`.
- * - If raster data or zoom information is unavailable for a tile, it returns `null`.
- *
- * @example
- * ```typescript
- * const layer = await createCogLayer({
- *   url: 'https://example.com/cog.tif',
- *   id: 'my-cog-layer',
- *   tileSize: 256,
- *   minZoom: 0,
- *   maxZoom: 20
- * });
- * ```
+ * @returns A Deck.gl TileLayer configured to render COG image tiles.
  */
-export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: CogLayerProps): TileLayer => {
+export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, renderLogicMap, debugMode }: CogLayerProps): TileLayer => {
 
+
+  /**
+   * Generates a random RGBA color with a fixed alpha value of 177.
+   * 
+   * @returns {[number, number, number, number]} An array representing the RGBA color, where:
+   * - The first element is the red component (0-255).
+   * - The second element is the green component (0-255).
+   * - The third element is the blue component (0-255).
+   * - The fourth element is the alpha component (fixed at 177).
+   */
+  const debugRandomTileColor = () => {
+    const randomR = Math.floor(Math.random() * 256);
+    const randomG = Math.floor(Math.random() * 256);
+    const randomB = Math.floor(Math.random() * 256);
+    return [randomR, randomG, randomB, 177] as [number, number, number, number];
+  }
+
+  /**
+   * Converts a raster dataset into an 8-bit RGBA image representation.
+   *
+   * This function processes a raster dataset, interprets its values using a mapping logic,
+   * and generates an RGBA image. The resulting image is returned as a bitmap for further use.
+   *
+   * @param cogRaster - The raster data to be converted, containing pixel values and dimensions.
+   *                    It is expected to have a `width` and `height` property, and the pixel
+   *                    values are accessed as an array-like structure.
+   *
+   * @returns A promise that resolves to an object containing:
+   *          - `bitmap`: An `ImageBitmap` representation of the processed RGBA image.
+   * @throws Will throw an error if the `createImageBitmap` function fails.
+   */
+  const rasterToRGBA = async (cogRaster: ReadRasterResult, colorForUnknown?: [number, number, number, number]) => {
+
+    // prepare clamped array for 8-bit RGBA
+    const output = new Uint8ClampedArray(cogRaster.width * cogRaster.height * 4); // 4 channels per value (RGBA)
+
+    // retype the raster data to a number array
+    const rasterData = cogRaster as ArrayLike<number>;
+
+    // now we need to read each pixel and convert it to RGBA
+    let rgbaRasterIndex = 0
+    for (let i = 0; i < rasterData.length; i += 1) {
+
+      // this can be anything as COG in not always about RGBA, but also about other values
+      // it can be measurement, classification, etc.
+      const rasterValueFromImage = rasterData[i];
+
+      // ...but we have a map to convert it to RGBA
+      // the maps tells us how to convert the value to RGBA
+      const [r, g, b, a] = renderLogicMap.get(rasterValueFromImage) ??
+        colorForUnknown ??
+        renderLogicMap.get("unknown") ??
+        [0, 0, 0, 0]; // Default transparent black
+
+      // and for each pixel we need to set RGBA
+      output[rgbaRasterIndex] = r; // Red
+      output[rgbaRasterIndex + 1] = g; // Green
+      output[rgbaRasterIndex + 2] = b; // Blue
+      output[rgbaRasterIndex + 3] = a; // Alpha
+
+      // Move to the next pixel (4 channels)
+      rgbaRasterIndex += 4;
+    }
+
+    const imageData = new ImageData(output, tileSize, tileSize);
+    const bitmap = await createImageBitmap(imageData); // optional: wrap in async
+
+    return bitmap
+  }
+
+  // the output is special kind of DeckGL TileLayer as it's mapped to XYZ tile coordinates
   return new TileLayer({
 
     // name of the layer
     id: id,
-
-    // // source of the tile data
-    // data: url,
 
     //size of the tile
     tileSize: tileSize ?? LAYER_DEFAULTS.tileSize,
@@ -74,49 +140,30 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
 
       try {
 
+        // destruct the tile props for indexes and bounding box
         const { index: { x, y, z }, bbox: webProjectionBounds } = tile;
 
-        console.log("1, BBOX", webProjectionBounds);
+        // Fetch raster data for the given tile coordinates and make a check
+        const rasterResults = await cogImage.imageByBoundsForXYZ({
+          boundOfTheTile: webProjectionBounds as BoundingBox,
+          zoom: z,
+          tileSize
+        })
 
-        const { bbox: bboxMercator } = convertBoundsToMercator(webProjectionBounds as BoundingBox)
+        if (!rasterResults) 
+          return null;
 
-
-        console.log("1, BBOX MERCATOR", bboxMercator);
-
-        // Fetch raster data for the given tile coordinates
-        const rasterResults = await cogImage.imageByBoundsForXYZ(z, bboxMercator);
-        if (!rasterResults) {
-          console.info('No raster data available for tile:', tile);
+        if (rasterResults.width !== tileSize || rasterResults.height !== tileSize) {
+          console.error('Raster data dimensions do not match tile size:', rasterResults.width, rasterResults.height);
           return null;
         }
 
-        const cogZoomInfo = cogImage.mapCogImageByTileZoom.get(z);
-
-        if (!cogZoomInfo) {
-          console.error('No zoom information available for tile:', tile);
-          return null;
-        }
-
-        const [width, height] = [rasterResults.width, rasterResults.height]
-        const output = new Uint8ClampedArray(width * height * 4); // 4 channels per value (RGBA)
-        const rasterData = rasterResults as ArrayLike<number>;
-
-        for (let i = 0; i < rasterData.length; i++) {
-          const value = rasterData[i]; // 0–255 assumed (you might need to normalize if Float32)
-          
-          output[i * 4 + 0] = value; // R
-          output[i * 4 + 1] = value; // G
-          output[i * 4 + 2] = value; // B
-          output[i * 4 + 3] = 255;   // A (fully opaque)
-        }
-
-        const imageData = new ImageData(output, width, height);
-
-        const bitmap = await createImageBitmap(imageData); // optional: wrap in async
+        // Convert the raster data to RGBA bitmap
+        // and if debug mode is enabled, we will use random tile color for each tile
+        const bitmap = await rasterToRGBA(rasterResults, debugMode ? debugRandomTileColor() : undefined);
 
         return {
-          bitmap,
-          bounds: boundsToBbox(webProjectionBounds as BoundingBox),
+          bitmap
         };
       } catch (error) {
         console.error('Error fetching tile data:', error);
@@ -124,32 +171,33 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom }: Cog
       }
     },
 
+    // This function is called for each tile to render the data into map
+    // Each tile data from the COG is a bitmap
+    // and we need to render it as a bitmap layer
     renderSubLayers: (props) => {
-      const { data } = props;
 
-      const randomNumber = Math.floor(Math.random() * 100000);
+      // destruct the props to get the data and bounding box
+      const { data, tile: { boundingBox } } = props;
+
+      // there is a need of unique ID for each tile
+      const randomNumber = Math.floor(Math.random() * 1000) + "_._" + Math.floor(Math.random() * 1000);
+      
+      // do we have any bitmap for render?
       const bitmap = data?.bitmap;
-      const bounds = data?.bounds;
 
-      console.log("2, Bitmap", bitmap);
-      console.log("2, Bounds", bounds);
-
-      if (!bitmap) 
-        console.warn('No bitmap available for rendering:', data);
-
-      if(!bounds) 
-        console.warn('No bounds available for rendering:', data);
-
-      if (bitmap && bounds && bounds.every(Number.isFinite)) {
+      // ... if so, we will render it
+      if (bitmap) {
         return new BitmapLayer({
           id: `tile-bitmap-${randomNumber}`,
           image: bitmap,
-          bounds: bounds,
-          pickable: false
+          bounds: [boundingBox[0][0], boundingBox[0][1], boundingBox[1][0], boundingBox[1][1]],
+          pickable: false,
+
         });
       }
-    
-      console.warn('No valid bitmap or bounds available for rendering:', data);
+
+      // .. or we will return null
+      // this will not render anything
       return null;
     }
   });

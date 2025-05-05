@@ -1,7 +1,8 @@
 import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
-import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
-import { bboxToBounds, boundsOverlapCheck } from "@geoimage/shared/helpers/gis.transform";
+import type { BoundingBox, TupleBBOX } from "@geoimage/shared/gis/gis.types";
+import { bboxToBounds, isBoundsOverlap, bboxIntersectionPart } from "@geoimage/shared/gis/gis.bbox";
+import { convertBoundsToMercator } from "@geoimage/shared/gis/gis.mercator";
 
 /**
  * Represents a mapping between an image level and its corresponding resolution.
@@ -40,6 +41,10 @@ export class CogDynamicImage {
     // it is the same for all levels
     bbox: TupleBBOX;
 
+    // the COG image is in projected CRS
+    projection: string;
+
+
     // bounds of the COG image in meters
     // it is the same for all levels
     bounds: BoundingBox
@@ -54,6 +59,8 @@ export class CogDynamicImage {
     // XYZ zoom level of the main image
     // we need to catch the first tile zoom to predict each image level for 
     xyzMainImageZoom: number
+
+    xyzMainImageIndexes: [number, number, number]
 
     // helper for XYZ tiles, like for comparing resolutions
     tileMagicXYZ: TileMagicXYZ;
@@ -97,14 +104,24 @@ export class CogDynamicImage {
         this.bbox = mainImage.getBoundingBox() as [number, number, number, number];
         this.bounds = bboxToBounds(this.bbox);
 
+        // projection of the COG image is same for all levels
+        const geoKeys = mainImage.getGeoKeys();
+        this.projection = geoKeys.ProjectedCSTypeGeoKey || geoKeys.GeographicTypeGeoKey
+        if (!this.projection)
+            throw new Error("No projection found in the COG image");
+
         // COG image resolution
         // tiled COGs has same re
-        this.mainResolutionMetersPerPixel = mainImage.getResolution()[0] as number;
+        const resolutions = mainImage.getResolution();
+        this.mainResolutionMetersPerPixel = resolutions[0];
 
         const {
             zoomLevel: xyzZoomLevel
         } = this.tileMagicXYZ.bestTileZoomForResolution(this.mainResolutionMetersPerPixel)
+
         this.xyzMainImageZoom = xyzZoomLevel;
+
+        this.xyzMainImageIndexes = this.tileMagicXYZ.metersToTile(this.origin[0], this.origin[1], xyzZoomLevel);
     }
 
     /**
@@ -223,12 +240,16 @@ export class CogDynamicImage {
      * Retrieves raster data for a specific zoom level and bounding box.
      *
      * @param zoom - The zoom level for which the raster data is requested.
-     * @param bbox - The bounding box defining the area of interest, represented as a tuple. Need to be in mercator (meters)
+     * @param boundOfTheTile - The bounding box defining the area of interest, represented as a tuple. Declared in web mercator (longitude, latitude).
      * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
      * @throws An error if no image is found for the specified zoom level.
      */
-    imageByBoundsForXYZ = async (zoom: number, bbox: TupleBBOX, tileSize = 256): Promise<ReadRasterResult | null> => {
 
+
+    imageByBoundsForXYZ = async ({ zoom, boundOfTheTile, tileSize = 256 }: { zoom: number, boundOfTheTile: BoundingBox, tileSize: number }): Promise<ReadRasterResult | null> => {
+
+
+        const renderingIndex = Math.floor(Math.random() * 10000)
 
         /**
          * Checks if the provided GeoTIFF image is tiled.
@@ -241,15 +262,20 @@ export class CogDynamicImage {
                 throw new Error("The image is not tiled");
         }
 
+        const { bbox: bboxTileMercator } = convertBoundsToMercator(boundOfTheTile)
+
         // check if the COG image bounding box overlaps with the XYZ tile bounding box
         // the Geotiff library always returns a result
         // but we don't need it in the case of no overlap
-        const bboxOverlap = boundsOverlapCheck(bbox, this.bbox);
+        const bboxOverlap = isBoundsOverlap(bboxTileMercator, this.bbox);
 
         if (!bboxOverlap) {
-            console.info("No overlap between COG image and requested bounding box");
             return null
         }
+
+        // get the intersection of the COG image and the XYZ tile bounding box
+        // so we will have the shared area of both bboxes 
+        const { bbox: bboxImageSection } = bboxIntersectionPart(bboxTileMercator, this.bbox);
 
         // guess the image level for the requested XYZ tile zoom level
         const { imageLevel } = this.expectedImageForTileZoom(zoom);
@@ -264,21 +290,88 @@ export class CogDynamicImage {
         // we need tiled COGs only
         checkCogIsTiled(image)
 
+        // get the expected resolution for the image level
+        const expectedResolution = this.expectedImageLevelResolution(imageLevel);
+
+        // get windex selection - X (min and max) and Y (min and max)
+        const windowSelection = CogDynamicImage.bboxToWindow(
+            bboxImageSection,
+            this.origin,
+            [expectedResolution, expectedResolution]
+        );
+
         // select and read rasters from the image
         // using interleave = raster result one long array of values
         // with false it is an array of arrays (array per band)
         // TODO: make interleave optional
         // TODO: bands etc.
         const rastersRead = await image.readRasters({
-            bbox,
-            // window: [0, 0, 25, 25],
-            interleave: true,
+            // bbox: bboxMercator, // INFO: Not working for some reason
+            window: windowSelection,
+            interleave: true, // TODO: make it optional for case of multiple bands
             height: tileSize,
             width: tileSize,
         })
 
         // return the raster result
         return rastersRead
+    }
+
+    /**
+     * Converts a bounding box in Mercator coordinates to a pixel window for reading a COG (Cloud Optimized GeoTIFF) raster.
+     * 
+     * @param imagePartBox - The bounding box of the shared part between the COG image and the XYZ tile, 
+     *                       represented as a tuple [minX, minY, maxX, maxY] in Mercator coordinates (meters).
+     * @param origin - The origin of the COG image in Mercator coordinates, represented as a tuple [originX, originY, originZ].
+     * @param resolution - The resolution of the COG image at level 0 (maximum zoom), represented as a tuple [resX, resY] in meters per pixel.
+     * 
+     * @returns A tuple [pxOriginX, pxOriginY, pxEndX, pxEndY] representing the pixel window for the COG raster. 
+     *          The window is defined by the top-left (pxOriginX, pxOriginY) and bottom-right (pxEndX, pxEndY) pixel coordinates.
+     */
+    static bboxToWindow(imagePartBox: TupleBBOX, origin: [number, number, number], resolution: [number, number]) {
+
+        // COG image origin
+        const [originX, originY] = origin;
+
+        // COG level 0 resolution (max zoom)
+        const [resX, resY] = resolution;
+
+        /**
+         * Counts difference in meters between the COG image origin and the given coordinates
+         * Than it divides the difference by the resolution (m /px), so we get the pixel number 
+         * @param xMercator x coordinate in meters
+         * @param yMercator y coordinate in meters
+         * @returns 
+         */
+        const mercatorToPixel = (xMercator: number, yMercator: number) => {
+            const pixelX = Math.floor((xMercator - originX) / resX);
+            const pixelY = Math.floor((yMercator - originY) / resY);
+            return [pixelX, pixelY];
+        };
+
+        // decompose bbox of shared part between the COG image and the XYZ tile
+        const [minX, minY, maxX, maxY] = imagePartBox;
+
+        // convert meters to pixel coordinates
+        // and abs them to get the positive values (TODO: is that ok?)
+        const [px0, py0] = mercatorToPixel(minX, maxY).map(val => Math.abs(val));
+        const [px1, py1] = mercatorToPixel(maxX, minY).map(val => Math.abs(val));
+
+        //... but the coordinates can be reversed
+        // so we need to find the min and max values
+        // to start and end the window
+
+        // X axis of the image
+        const pxOriginX = Math.min(px0, px1) // from the left
+        const pxEndX = Math.max(px0, px1) // to the right
+
+        // Y axis of the image
+        const pxOriginY = Math.min(py0, py1) // from the top
+        const pxEndY = Math.max(py0, py1) // to the bottom
+
+
+        // return as a window selection for COG rater reading
+        return [pxOriginX, pxOriginY, pxEndX, pxEndY]
     }
 
     /**
@@ -309,6 +402,8 @@ export class CogDynamicImage {
 
         return resolutionMetersPerPixel
     }
+
+
 
     /**
      * More for testing and debugging. 
