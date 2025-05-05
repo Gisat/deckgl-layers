@@ -1,4 +1,4 @@
-import { differenceBetweenPointsInMercator } from "@geoimage/shared/helpers/gis.mercator";
+import { differenceBetweenPointsInMercator } from "@geoimage/shared/gis/gis.mercator";
 
 describe('Helper functions for mercator projection', () => {
 

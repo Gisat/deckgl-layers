@@ -1,7 +1,7 @@
 import { PathLayer } from '@deck.gl/layers';
-import { convertMercatorBoundsToCoordinates } from '@geoimage/shared/helpers/gis.mercator';
-import { bboxToPath } from '@geoimage/shared/helpers/gis.bbox';
-import { BoundingBox, TupleBBOX } from '@geoimage/shared/helpers/gis.types';
+import { bboxToPath } from '@geoimage/shared/gis/gis.bbox';
+import { convertMercatorBoundsToCoordinates } from '@geoimage/shared/gis/gis.mercator';
+import { BoundingBox, TupleBBOX } from '@geoimage/shared/gis/gis.types';
 
 /**
  * Layer to draw a bounding box on the map

@@ -1,6 +1,11 @@
-import { BoundingBox } from "@geoimage/shared/helpers/gis.types";
-import { MERCATOR_ZERO_256_RESOLUTION } from "../shared/helpers/gis.mercator";
+import { BoundingBox } from "@geoimage/shared/gis/gis.types";
+import { MERCATOR_ZERO_256_RESOLUTION } from "../shared/gis/gis.mercator";
 
+/**
+ * TileMagicXYZ class provides methods to work with XYZ tiles and their resolutions.
+ * It includes functionality to convert tile coordinates to bounding boxes in Mercator projection,
+ * and to find the best zoom level for a given resolution.
+ */
 export class TileMagicXYZ {
 
     /**
@@ -110,23 +115,15 @@ export class TileMagicXYZ {
         };
     };
 
-    tileXYToTopLeftMercator = ([x, y, z]: [x: number, y: number, z: number], tileSize = 256): { x: number, y: number } => {
-        const originShift = (tileSize / 2) * MERCATOR_ZERO_256_RESOLUTION;
-    
-        const resolution = this.tileZoomResolutionMap.get(z);
-        if (!resolution) {
-            throw new Error(`Resolution not found for zoom level ${z}`);
-        }
-    
-        const topLeftX = x * tileSize * resolution - originShift;
-        const topLeftY = originShift - y * tileSize * resolution;
-    
-        return {
-            x: topLeftX,
-            y: topLeftY,
-        };
-    };
-
+    /**
+     * Converts coordinates in meters to tile coordinates at a specific zoom level.
+     *
+     * @param xMeters - The X coordinate in meters.
+     * @param yMeters - The Y coordinate in meters.
+     * @param zoom - The zoom level for the tile grid.
+     * @param tileSize - The size of a single tile in pixels (default is 256).
+     * @returns A tuple containing the tile X coordinate, tile Y coordinate, and the zoom level.
+     */
     metersToTile(xMeters: number, yMeters: number, zoom: number, tileSize = 256): [number, number, number] {
         const originShiftMeters = 20037508.342789244;
         const initialResolution = (2 * originShiftMeters) / tileSize;
