@@ -1,9 +1,8 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
 import { CogDynamicImage } from '@geoimage/cogs/models.cog';
-import { boundsToBbox } from '@geoimage/shared/helpers/gis.bbox';
 import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
-import { D4, RenderByValueDecider } from '@geoimage/shared/helpers/rendering.types';
+import { RenderByValueDecider } from '@geoimage/shared/helpers/rendering.types';
 import { ReadRasterResult } from 'geotiff';
 
 /**
@@ -57,7 +56,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
   /**
    * Generates a random RGBA color with a fixed alpha value of 177.
    * 
-   * @returns {D4} An array representing the RGBA color, where:
+   * @returns {[number, number, number, number]} An array representing the RGBA color, where:
    * - The first element is the red component (0-255).
    * - The second element is the green component (0-255).
    * - The third element is the blue component (0-255).
@@ -67,7 +66,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
     const randomR = Math.floor(Math.random() * 256);
     const randomG = Math.floor(Math.random() * 256);
     const randomB = Math.floor(Math.random() * 256);
-    return [randomR, randomG, randomB, 177] as D4;
+    return [randomR, randomG, randomB, 177] as [number, number, number, number];
   }
 
   /**
@@ -84,7 +83,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
    *          - `bitmap`: An `ImageBitmap` representation of the processed RGBA image.
    * @throws Will throw an error if the `createImageBitmap` function fails.
    */
-  const rasterToRGBA = async (cogRaster: ReadRasterResult, colorForUnknown?: D4) => {
+  const rasterToRGBA = async (cogRaster: ReadRasterResult, colorForUnknown?: [number, number, number, number]) => {
 
     // prepare clamped array for 8-bit RGBA
     const output = new Uint8ClampedArray(cogRaster.width * cogRaster.height * 4); // 4 channels per value (RGBA)
