@@ -132,7 +132,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
           return null;
         }
 
-        const bitmap = await rasterToRGBA(rasterResults, debugMode && debugRandomTileColor());
+        const bitmap = await rasterToRGBA(rasterResults, debugMode ? debugRandomTileColor() : undefined);
 
         return {
           bitmap
