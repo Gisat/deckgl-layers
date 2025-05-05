@@ -3,6 +3,12 @@ import { convertMercatorBoundsToCoordinates } from '@geoimage/shared/helpers/gis
 import { bboxToPath } from '@geoimage/shared/helpers/gis.transform';
 import { BoundingBox, TupleBBOX } from '@geoimage/shared/helpers/gis.types';
 
+/**
+ * Layer to draw a bounding box on the map
+ * @param bounds // Bounding box coordinates
+ * @param isInMeters // Optional: Are coordinates are in meters
+ * @returns 
+ */
 export const createBoundingBoxLayer = (bounds: TupleBBOX | BoundingBox, isInMeters = false) => {
 
     const bboxLonLat = isInMeters && convertMercatorBoundsToCoordinates(bounds).bbox;
