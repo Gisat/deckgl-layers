@@ -273,12 +273,9 @@ export class CogDynamicImage {
             return null
         }
 
-        console.log("Tile bbox", bboxTileMercator, renderingIndex)
-        console.log("Image bbox", this.bbox, renderingIndex)
-
+        // get the intersection of the COG image and the XYZ tile bounding box
+        // so we will have the shared area of both bboxes 
         const { bbox: bboxImageSection } = bboxIntersectionPart(bboxTileMercator, this.bbox);
-
-        console.log("Shared Section bbox", bboxImageSection, renderingIndex)
 
         // guess the image level for the requested XYZ tile zoom level
         const { imageLevel } = this.expectedImageForTileZoom(zoom);
@@ -293,15 +290,15 @@ export class CogDynamicImage {
         // we need tiled COGs only
         checkCogIsTiled(image)
 
+        // get the expected resolution for the image level
         const expectedResolution = this.expectedImageLevelResolution(imageLevel);
 
+        // get windex selection - X (min and max) and Y (min and max)
         const windowSelection = CogDynamicImage.bboxToWindow(
             bboxImageSection,
             this.origin,
             [expectedResolution, expectedResolution]
         );
-
-        console.log("Window selection", windowSelection, renderingIndex)
 
         // select and read rasters from the image
         // using interleave = raster result one long array of values
@@ -320,6 +317,17 @@ export class CogDynamicImage {
         return rastersRead
     }
 
+    /**
+     * Converts a bounding box in Mercator coordinates to a pixel window for reading a COG (Cloud Optimized GeoTIFF) raster.
+     * 
+     * @param imagePartBox - The bounding box of the shared part between the COG image and the XYZ tile, 
+     *                       represented as a tuple [minX, minY, maxX, maxY] in Mercator coordinates (meters).
+     * @param origin - The origin of the COG image in Mercator coordinates, represented as a tuple [originX, originY, originZ].
+     * @param resolution - The resolution of the COG image at level 0 (maximum zoom), represented as a tuple [resX, resY] in meters per pixel.
+     * 
+     * @returns A tuple [pxOriginX, pxOriginY, pxEndX, pxEndY] representing the pixel window for the COG raster. 
+     *          The window is defined by the top-left (pxOriginX, pxOriginY) and bottom-right (pxEndX, pxEndY) pixel coordinates.
+     */
     static bboxToWindow(imagePartBox: TupleBBOX, origin: [number, number, number], resolution: [number, number]) {
 
         // COG image origin
