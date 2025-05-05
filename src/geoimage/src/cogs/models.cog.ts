@@ -1,7 +1,7 @@
 import GeoTIFF, { fromFile, fromUrl, GeoTIFFImage, ReadRasterResult } from "geotiff";
 import { TileMagicXYZ } from "../tiles/models.tileMagic";
 import type { BoundingBox, TupleBBOX } from "@geoimage/shared/helpers/gis.types";
-import { bboxIntersectionPart, bboxToBounds, isBoundsOverlap, boundsToBbox } from "@geoimage/shared/helpers/gis.transform";
+import { bboxIntersectionPart, bboxToBounds, isBoundsOverlap, boundsToBbox } from "@geoimage/shared/helpers/gis.bbox";
 import { convertBoundsToMercator, differenceBetweenPointsInMercator } from "@geoimage/shared/helpers/gis.mercator";
 
 /**

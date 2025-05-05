@@ -49,6 +49,13 @@ export const isBoundsOverlap = (bboxA: TupleBBOX | BoundingBox, bboxB: TupleBBOX
     );
 }
 
+/**
+ * Determines whether one bounding box (inner) is fully contained within another bounding box (outer).
+ *
+ * @param outer - The outer bounding box represented as a tuple [minX, minY, maxX, maxY].
+ * @param inner - The inner bounding box represented as a tuple [minX, minY, maxX, maxY].
+ * @returns A boolean indicating whether the inner bounding box is fully contained within the outer bounding box.
+ */
 export const isBoundsContains = (outer: TupleBBOX, inner: TupleBBOX): boolean => {
     return (
         inner[0] >= outer[0] &&  // inner.minX >= outer.minX
@@ -58,6 +65,17 @@ export const isBoundsContains = (outer: TupleBBOX, inner: TupleBBOX): boolean =>
     );
 };
 
+/**
+ * Calculates the intersection of two bounding boxes (BBOX).
+ * If the bounding boxes do not intersect, the function returns `null`.
+ *
+ * @param bboxA - The first bounding box represented as a tuple [minX, minY, maxX, maxY].
+ * @param bboxB - The second bounding box represented as a tuple [minX, minY, maxX, maxY].
+ * @returns An object containing:
+ *   - `bbox`: The intersection bounding box as a tuple [minX, minY, maxX, maxY].
+ *   - `boundingBox`: The intersection bounding box in a different format (converted using `bboxToBounds`).
+ *   Returns `null` if there is no intersection.
+ */
 export const bboxIntersectionPart = (
     bboxA: TupleBBOX,
     bboxB: TupleBBOX
@@ -77,14 +95,28 @@ export const bboxIntersectionPart = (
     return { bbox: asTupleBox as TupleBBOX, boundingBox: asBoundingBox as BoundingBox };
 };
 
+/**
+ * Converts a bounding box (bbox) into a path represented as an array of coordinate pairs.
+ * The path forms a closed loop, starting and ending at the same point.
+ *
+ * @param bbox - The bounding box to convert. It can be either:
+ *   - A `TupleBBOX` (an array of four numbers: [minLng, minLat, maxLng, maxLat]).
+ *   - A `BoundingBox` object, which will be converted to a `TupleBBOX` using `boundsToBbox`.
+ * 
+ * @returns An array of coordinate pairs `[number, number][]` representing the path of the bounding box.
+ *          The path includes the four corners of the bounding box and closes the loop by repeating the first point.
+ */
 export const bboxToPath = (bbox: TupleBBOX | BoundingBox): [number, number][] => {
 
+    // Convert bounds to TupleBBOX if necessary
     if (!Array.isArray(bbox)) {
         bbox = boundsToBbox(bbox);
     }
 
+    // Destructure the bounding box coordinates
     const [minLng, minLat, maxLng, maxLat] = bbox;
 
+    // Create the path as an array of coordinate pairs
     const path = [
       [minLng, minLat],
       [maxLng, minLat],

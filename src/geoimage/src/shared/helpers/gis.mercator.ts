@@ -1,6 +1,6 @@
 import proj4 from 'proj4';
 import { BoundingBox, TupleBBOX } from './gis.types';
-import { bboxToBounds, boundsToBbox } from './gis.transform';
+import { bboxToBounds, boundsToBbox } from './gis.bbox';
 
 const WGS84 = 'EPSG:4326';
 const WEB_MERCATOR = 'EPSG:3857';

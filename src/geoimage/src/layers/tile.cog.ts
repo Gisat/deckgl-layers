@@ -1,7 +1,7 @@
 import { TileLayer } from '@deck.gl/geo-layers';
 import { BitmapLayer } from '@deck.gl/layers';
 import { CogDynamicImage } from '@geoimage/cogs/models.cog';
-import { boundsToBbox } from '@geoimage/shared/helpers/gis.transform';
+import { boundsToBbox } from '@geoimage/shared/helpers/gis.bbox';
 import { BoundingBox } from '@geoimage/shared/helpers/gis.types';
 import { D4, RenderByValueDecider } from '@geoimage/shared/helpers/rendering.types';
 import { ReadRasterResult } from 'geotiff';
