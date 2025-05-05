@@ -10,7 +10,7 @@ import { TileLayer } from "@deck.gl/geo-layers";
 import { CogDynamicImage } from "@geoimage/cogs/models.cog";
 import { PathLayer } from "@deck.gl/layers";
 import { createBoundingBoxLayer } from "@geoimage/layers/path.bbox";
-import { RenderByValueDecider } from "@geoimage/shared/helpers/rendering.types";
+import { RenderByValueDecider } from "@geoimage/shared/rendering/rendering.types";
 
 interface CogMapProps {
     cogUrl: string;
