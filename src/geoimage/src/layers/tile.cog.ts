@@ -93,12 +93,12 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
     const rasterData = cogRaster as ArrayLike<number>;
 
     // now we need to read each pixel and convert it to RGBA
-    let rasterDataIdx = 0;
-    for (let i = 0; i < output.length; i += 4) {
+    let rgbaRasterIndex = 0
+    for (let i = 0; i < rasterData.length; i += 1) {
 
       // this can be anything as COG in not always about RGBA, but also about other values
       // it can be measurement, classification, etc.
-      const rasterValueFromImage = rasterData[rasterDataIdx];
+      const rasterValueFromImage = rasterData[i];
 
       // ...but we have a map to convert it to RGBA
       // the maps tells us how to convert the value to RGBA
@@ -108,12 +108,13 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
         [0, 0, 0, 0]; // Default transparent black
 
       // and for each pixel we need to set RGBA
-      output[i] = r; // Red
-      output[i + 1] = g; // Green
-      output[i + 2] = b; // Blue
-      output[i + 3] = a; // Alpha
+      output[rgbaRasterIndex] = r; // Red
+      output[rgbaRasterIndex + 1] = g; // Green
+      output[rgbaRasterIndex + 2] = b; // Blue
+      output[rgbaRasterIndex + 3] = a; // Alpha
 
-      rasterDataIdx += 1;
+      // Move to the next pixel (4 channels)
+      rgbaRasterIndex += 4; 
     }
 
     const imageData = new ImageData(output, tileSize, tileSize);
