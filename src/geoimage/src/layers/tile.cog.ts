@@ -114,7 +114,7 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
       output[rgbaRasterIndex + 3] = a; // Alpha
 
       // Move to the next pixel (4 channels)
-      rgbaRasterIndex += 4; 
+      rgbaRasterIndex += 4;
     }
 
     const imageData = new ImageData(output, tileSize, tileSize);
@@ -129,9 +129,6 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
     // name of the layer
     id: id,
 
-    // // source of the tile data
-    // data: url,
-
     //size of the tile
     tileSize: tileSize ?? LAYER_DEFAULTS.tileSize,
 
@@ -144,24 +141,26 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
 
       try {
 
+        // destruct the tile props for indexes and bounding box
         const { index: { x, y, z }, bbox: webProjectionBounds } = tile;
 
-        // Fetch raster data for the given tile coordinates
-        const rasterResults = await cogImage.imageByBoundsForXYZ(
-          z,
-          webProjectionBounds as BoundingBox,
-        )
+        // Fetch raster data for the given tile coordinates and make a check
+        const rasterResults = await cogImage.imageByBoundsForXYZ({
+          boundOfTheTile: webProjectionBounds as BoundingBox,
+          zoom: z,
+          tileSize
+        })
 
-        if (!rasterResults) {
-          // console.info('No raster data available for tile:', tile);
+        if (!rasterResults) 
           return null;
-        }
 
         if (rasterResults.width !== tileSize || rasterResults.height !== tileSize) {
           console.error('Raster data dimensions do not match tile size:', rasterResults.width, rasterResults.height);
           return null;
         }
 
+        // Convert the raster data to RGBA bitmap
+        // and if debug mode is enabled, we will use random tile color for each tile
         const bitmap = await rasterToRGBA(rasterResults, debugMode ? debugRandomTileColor() : undefined);
 
         return {
@@ -178,11 +177,16 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
     // and we need to render it as a bitmap layer
     renderSubLayers: (props) => {
 
+      // destruct the props to get the data and bounding box
       const { data, tile: { boundingBox } } = props;
 
+      // there is a need of unique ID for each tile
       const randomNumber = Math.floor(Math.random() * 1000) + "_._" + Math.floor(Math.random() * 1000);
+      
+      // do we have any bitmap for render?
       const bitmap = data?.bitmap;
 
+      // ... if so, we will render it
       if (bitmap) {
         return new BitmapLayer({
           id: `tile-bitmap-${randomNumber}`,
@@ -193,6 +197,8 @@ export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, rende
         });
       }
 
+      // .. or we will return null
+      // this will not render anything
       return null;
     }
   });

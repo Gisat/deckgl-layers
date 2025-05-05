@@ -244,7 +244,9 @@ export class CogDynamicImage {
      * @returns A promise that resolves to the raster data (`ReadRasterResult`) for the specified zoom level and bounding box.
      * @throws An error if no image is found for the specified zoom level.
      */
-    imageByBoundsForXYZ = async (zoom: number, boundOfTheTile: BoundingBox, flatStructure = true, tileSize = 256): Promise<ReadRasterResult | null> => {
+
+
+    imageByBoundsForXYZ = async ({ zoom, boundOfTheTile, tileSize = 256 }: { zoom: number, boundOfTheTile: BoundingBox, tileSize: number }): Promise<ReadRasterResult | null> => {
 
 
         const renderingIndex = Math.floor(Math.random() * 10000)
@@ -292,10 +294,10 @@ export class CogDynamicImage {
         checkCogIsTiled(image)
 
         const expectedResolution = this.expectedImageLevelResolution(imageLevel);
-        
+
         const windowSelection = CogDynamicImage.bboxToWindow(
-            bboxImageSection, 
-            this.origin, 
+            bboxImageSection,
+            this.origin,
             [expectedResolution, expectedResolution]
         );
 
@@ -309,7 +311,7 @@ export class CogDynamicImage {
         const rastersRead = await image.readRasters({
             // bbox: bboxMercator, // INFO: Not working for some reason
             window: windowSelection,
-            interleave: flatStructure,
+            interleave: true, // TODO: make it optional for case of multiple bands
             height: tileSize,
             width: tileSize,
         })
@@ -319,7 +321,7 @@ export class CogDynamicImage {
     }
 
     static bboxToWindow(imagePartBox: TupleBBOX, origin: [number, number, number], resolution: [number, number]) {
-        
+
         // COG image origin
         const [originX, originY] = origin;
 
