@@ -31,9 +31,38 @@ const LAYER_DEFAULTS = {
 }
 
 
+/**
+ * Creates a Deck.gl TileLayer for rendering Cloud Optimized GeoTIFF (COG) images.
+ *
+ * This function generates a TileLayer that processes raster data from COG images
+ * and converts it into RGBA bitmaps for rendering. It supports custom rendering
+ * logic, zoom levels, and debugging options.
+ *
+ * @param cogImage - An object providing access to the COG image data, including methods
+ *                   for fetching raster data by tile coordinates.
+ * @param id - A unique identifier for the layer.
+ * @param tileSize - The size of each tile in pixels. Defaults to a predefined value if not provided.
+ * @param maxZoom - The maximum zoom level for the layer. Defaults to a predefined value if not provided.
+ * @param minZoom - The minimum zoom level for the layer. Defaults to a predefined value if not provided.
+ * @param renderLogicMap - A mapping of raster values to RGBA color arrays. This map defines how
+ *                         raster values are converted into colors for rendering.
+ * @param debugMode - A boolean flag to enable debug mode. When enabled, tiles are rendered with
+ *                    random colors for easier debugging.
+ *
+ * @returns A Deck.gl TileLayer configured to render COG image tiles.
+ */
 export const createCogLayer = ({ cogImage, id, tileSize, maxZoom, minZoom, renderLogicMap, debugMode }: CogLayerProps): TileLayer => {
 
 
+  /**
+   * Generates a random RGBA color with a fixed alpha value of 177.
+   * 
+   * @returns {D4} An array representing the RGBA color, where:
+   * - The first element is the red component (0-255).
+   * - The second element is the green component (0-255).
+   * - The third element is the blue component (0-255).
+   * - The fourth element is the alpha component (fixed at 177).
+   */
   const debugRandomTileColor = () => {
     const randomR = Math.floor(Math.random() * 256);
     const randomG = Math.floor(Math.random() * 256);
