@@ -248,9 +248,6 @@ export class CogDynamicImage {
 
     imageByBoundsForXYZ = async ({ zoom, boundOfTheTile, tileSize = 256 }: { zoom: number, boundOfTheTile: BoundingBox, tileSize: number }): Promise<ReadRasterResult | null> => {
 
-
-        const renderingIndex = Math.floor(Math.random() * 10000)
-
         /**
          * Checks if the provided GeoTIFF image is tiled.
          * 

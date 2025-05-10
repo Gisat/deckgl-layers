@@ -1,5 +1,5 @@
 import { BoundingBox } from "@geoimage/shared/gis/gis.types";
-import { MERCATOR_ZERO_256_RESOLUTION } from "../shared/gis/gis.mercator";
+import { MERCATOR_ORIGIN_SHIFT, MERCATOR_ZERO_256_RESOLUTION } from "../shared/gis/gis.mercator";
 
 /**
  * TileMagicXYZ class provides methods to work with XYZ tiles and their resolutions.
@@ -35,11 +35,13 @@ export class TileMagicXYZ {
         zooms: number = 22
     ): Map<number, number> => {
 
+        // Map to store zoom level and resolution pairs
         const tileZoomResolutionMap = new Map<number, number>();
 
         // Adjust for non-standard tile sizes (e.g., 512)
         const baseResolution = MERCATOR_ZERO_256_RESOLUTION * (256 / tileSize);
 
+        // For each zoom level, calculate the resolution
         for (let zoom = 0; zoom <= zooms; zoom++) {
             const resolution = +(baseResolution / Math.pow(2, zoom)).toFixed(3);
             tileZoomResolutionMap.set(zoom, resolution);
@@ -79,6 +81,7 @@ export class TileMagicXYZ {
             }
         }
 
+        // response format
         const response = {
             zoomLevel: bestResolutionIndex,
             resolution: tileZoomLevelResolutions[bestResolutionIndex],
@@ -95,13 +98,16 @@ export class TileMagicXYZ {
      */
     tileXYToMercatorBBox = ([x, y, z]: [x: number, y: number, z: number], tileSize = 256): BoundingBox => {
         
+        // move coordinates to the center of the world (0,0)
         const originShift = (tileSize / 2) * MERCATOR_ZERO_256_RESOLUTION; // 20037508.342789244
 
+        // obtain the resolution for the given zoom level
         const resolution = this.tileZoomResolutionMap.get(z);
         if (!resolution) {
             throw new Error(`Resolution not found for zoom level ${z}`);
         }
 
+        // Calculate the bounding box in meters
         const minx = x * tileSize * resolution - originShift;
         const maxx = (x + 1) * tileSize * resolution - originShift;
         const maxy = originShift - y * tileSize * resolution;
@@ -125,13 +131,18 @@ export class TileMagicXYZ {
      * @returns A tuple containing the tile X coordinate, tile Y coordinate, and the zoom level.
      */
     metersToTile(xMeters: number, yMeters: number, zoom: number, tileSize = 256): [number, number, number] {
-        const originShiftMeters = 20037508.342789244;
-        const initialResolution = (2 * originShiftMeters) / tileSize;
+        
+        // move coordinates to the center of the world (0,0)
+        const initialResolution = (2 * MERCATOR_ORIGIN_SHIFT) / tileSize;
+
+        // calculate the resolution for the given zoom level
         const resolution = initialResolution / Math.pow(2, zoom);
       
-        const pixelX = (xMeters + originShiftMeters) / resolution;
-        const pixelY = (originShiftMeters - yMeters) / resolution;
+        // calculate the pixel coordinates
+        const pixelX = (xMeters + MERCATOR_ORIGIN_SHIFT) / resolution;
+        const pixelY = (MERCATOR_ORIGIN_SHIFT - yMeters) / resolution;
       
+        // calculate the tile coordinates
         const tileX = Math.floor(pixelX / tileSize);
         const tileY = Math.floor(pixelY / tileSize);
       

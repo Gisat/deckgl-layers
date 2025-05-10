@@ -8,6 +8,8 @@ const IS_DEBUG_MODE = true
 const useTestCogUrl = () => "https://gisat-gis.eu-central-1.linodeobjects.com/bsadri/test_raster/COG/LC_2021_all_Georgia_WEST3940_ZOOM6_test1_defl_COG256.tif"
 
 // Function to create a map for rendering RGBA colors based on pixel values for demo COG
+
+// TODO: more precise styling for later (maybe some specific demo, like specified data with color palethe?)
 const useTestRenderingMapLogic = (): RenderByValueDecider => {
 
     const randomR = Math.floor(Math.random() * 255);

@@ -31,6 +31,15 @@ export const boundsToBbox = (bounds: BoundingBox): TupleBBOX => {
 }
 
 
+/**
+ * Determines whether two bounding boxes overlap.
+ *
+ * @param bboxA - The first bounding box, which can be either a `TupleBBOX` or a `BoundingBox`.
+ *                If it is not a `TupleBBOX`, it will be converted using `boundsToBbox`.
+ * @param bboxB - The second bounding box, which can be either a `TupleBBOX` or a `BoundingBox`.
+ *                If it is not a `TupleBBOX`, it will be converted using `boundsToBbox`.
+ * @returns A boolean indicating whether the two bounding boxes overlap.
+ */
 export const isBoundsOverlap = (bboxA: TupleBBOX | BoundingBox, bboxB: TupleBBOX | BoundingBox) => {
 
     // Convert to TupleBBOX if necessary

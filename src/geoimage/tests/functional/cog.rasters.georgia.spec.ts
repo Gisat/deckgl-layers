@@ -1,67 +1,71 @@
-// import { useTestCogUrl } from '@test/tools/fixtures.cogs';
-// import { TileMagicXYZ } from '@geoimage/tiles/models.tileMagic';
-// import { convertBoundsToMercator } from '@geoimage/shared/helpers/gis.mercator';
-// import { CogDynamicImage } from '@geoimage/cogs/models.cog';
-// import { bboxToBounds } from '@geoimage/shared/helpers/gis.transform';
-// import { ReadRasterResult } from 'geotiff';
+import { useTestCogUrl } from '@test/tools/fixtures.cogs';
+import { TileMagicXYZ } from '@geoimage/tiles/models.tileMagic';
+import { CogDynamicImage } from '@geoimage/cogs/models.cog';
+import { ReadRasterResult } from 'geotiff';
+import { bboxToBounds } from '@geoimage/shared/gis/gis.bbox';
 
 
-// describe('COG Georgia Rasters for tiles', () => {
+describe('COG Georgia Rasters for tiles', () => {
 
-//     let COG: CogDynamicImage;
-//     let xyz: TileMagicXYZ;
+    let COG: CogDynamicImage;
+    let xyz: TileMagicXYZ;
 
-//     beforeAll(async () => {
-//         COG = await CogDynamicImage.fromUrl(useTestCogUrl());
-//         xyz = new TileMagicXYZ(256, 22);
-//     });
+    beforeAll(async () => {
+        COG = await CogDynamicImage.fromUrl(useTestCogUrl());
+        xyz = new TileMagicXYZ(256, 22);
+    });
 
-//     test("COG Rasters for Georgia COG", async () => {
-//         const georgia = [39.9859, 41.0550, 46.6981, 43.5866]
-//         const asBounds = bboxToBounds(georgia)
-//         const { bbox } = convertBoundsToMercator(asBounds)
-//         const tileZoom = 7
+    test("COG Rasters for Georgia COG", async () => {
+        const georgia = [39.9859, 41.0550, 46.6981, 43.5866] // from XYZ layer
+        const asBounds = bboxToBounds(georgia) // from XYZ layer
+        const tileZoom = 7 // from XYZ layer
 
-//         console.log("Projection: ", COG.projection)
-//         console.log("Bounds: ", COG.bounds)
-//         console.log("Origin: ", COG.origin)
+        const rasters: ReadRasterResult = await COG.imageByBoundsForXYZ({
+            zoom: tileZoom,
+            boundOfTheTile: asBounds,
+            tileSize: xyz.tileSize,
+        });
 
-//         const rasters: ReadRasterResult = await COG.imageByBoundsForXYZ(tileZoom, bbox);
+        const { height, width } = rasters;
 
-//         const { height, width } = rasters;
+        expect(height).toBe(256);
+        expect(width).toBe(256);
 
-//         expect(height).toBe(256);
-//         expect(width).toBe(256);
+    });
 
-//     });
+    test("COG Rasters miss Georgia bbox", async () => {
+        const georgiaIsNotThere = [5.9559, 45.818, 10.4921, 47.8084] // ..nope, here is swisserland
+        const asBounds = bboxToBounds(georgiaIsNotThere) // from XYZ layer
+        const tileZoom = 7 // from XYZ layer
 
-//     test("COG Rasters for Georgia Miss BBOX", async () => {
-//         const georgia = [5.9559, 45.818, 10.4921, 47.8084] // ..nope, here is swisserland
-//         const asBounds = bboxToBounds(georgia)
-//         const { bbox } = convertBoundsToMercator(asBounds)
-//         const tileZoom = 7
+        const rasters: ReadRasterResult = await COG.imageByBoundsForXYZ({
+            zoom: tileZoom,
+            boundOfTheTile: asBounds,
+            tileSize: xyz.tileSize,
+        });
 
-//         const rasters = await COG.imageByBoundsForXYZ(tileZoom, bbox);
+        expect(rasters).toBeNull()
 
-//         expect(rasters).toBeNull()
+    });
 
-//     });
+    test("Georgia, but zoom is wrong", async () => {
+        const georgia = [39.9859, 41.0550, 46.6981, 43.5866] // from XYZ layer
+        const asBounds = bboxToBounds(georgia) // from XYZ layer
+        const tileZoom = 1 // nope, there is no image for such zoom
 
-//     test("COG Rasters for Georgia Miss Zoom", async () => {
-//         const georgia = [39.9859, 41.0550, 46.6981, 43.5866]
-//         const asBounds = bboxToBounds(georgia)
-//         const { bbox } = convertBoundsToMercator(asBounds)
-//         const tileZoom = 2 // ..nope, too far from the COG
+        const rasters: ReadRasterResult = await COG.imageByBoundsForXYZ({
+            zoom: tileZoom,
+            boundOfTheTile: asBounds,
+            tileSize: xyz.tileSize,
+        });
 
-//         const rasters = await COG.imageByBoundsForXYZ(tileZoom, bbox);
+        expect(rasters).toBeNull()
 
-//         expect(rasters).toBeNull()
-
-//     });
+    });
 
 
-//     afterAll(() => {
-//         COG.close()
-//     })
+    afterAll(() => {
+        COG.close()
+    })
 
-// });
+});

@@ -41,8 +41,11 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
                 debugMode
             }))
 
-            debugMode && setBoxLayer(createBoundingBoxLayer(usedCog.bbox, true))
-        };
+            // Create bbox layer to see image bounds in debug mode
+            if (debugMode) 
+                setBoxLayer(createBoundingBoxLayer(usedCog.bbox, true))
+
+            };
         fetchCog();
     }, []);
 

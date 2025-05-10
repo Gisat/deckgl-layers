@@ -11,6 +11,12 @@ const WEB_MERCATOR = 'EPSG:3857';
  */
 export const MERCATOR_ZERO_256_RESOLUTION = 156543.03125;
 
+/**
+ * Mercator value in maters that will shift the coodinates to the center of the world
+ * (0,0) is in the center of the world
+ */
+export const MERCATOR_ORIGIN_SHIFT = 20037508.342789244;
+
 
 /**
  * Converts geographic bounds to Web Mercator projection bounds.
