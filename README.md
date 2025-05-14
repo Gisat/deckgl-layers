@@ -11,9 +11,6 @@ Folders:
 ## Installation
 - Install Node and NPM
 - Clone the project and go to the project root
-- Go into `/geoimage` and open a terminal there, keep also the root terminal
-- Run `npm i` in the package terminal 
-- Run `npm run build` or `npm run build:dev` in the package terminal
 - Run `npm i` in root terminal
 - Create an `.env` file in repository root by sample in `/doc` folder
 - Run `npm run dev`in root terminal
