@@ -21,9 +21,7 @@
         "@deck.gl/mesh-layers": "^9.0.33",
         "@deck.gl/react": "^9.0.33",
         "classnames": "^2.5.1",
-        "lodash": "^4.17.21",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0"
+        "lodash": "^4.17.21"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^28.0.3",
@@ -32,9 +30,6 @@
         "@rollup/plugin-typescript": "^12.1.2",
         "@types/lodash": "^4.17.15",
         "@types/node": "^20.17.24",
-        "@types/react": "^19",
-        "@types/react-dom": "^19",
-        "@types/webpack": "^5.28.5",
         "barrelsby": "^2.8.1",
         "rollup": "^4.37.0",
         "rollup-plugin-postcss": "^4.0.2",
@@ -44,6 +39,13 @@
         "tsconfig-paths": "^4.2.0",
         "tslib": "^2.8.1",
         "tsx": "^4.19.3",
-        "typescript": "^5.8.2"
+        "typescript": "^5.8.2",
+        "vite": "^6.2.5",
+        "vite-tsconfig-paths": "^5.1.4",
+        "vitest": "^3.1.1"
+    },
+    "dependencies": {
+        "@types/proj4": "^2.5.6",
+        "geotiff": "^2.1.3"
     }
 }

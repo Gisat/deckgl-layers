@@ -12,12 +12,15 @@ const pkg = require('./package.json'); // Loads package.json for configuration
 export default {
   input: 'index.ts', // Entry point of the library
   output: [
-    { file: pkg.main, format: 'cjs', sourcemap: true }, // CommonJS output
-    { file: pkg.module, format: 'esm', sourcemap: true } // ES module output
+    { file: pkg.main, format: 'cjs', sourcemap: true, inlineDynamicImports: true }, // CommonJS output
+    { file: pkg.module, format: 'esm', sourcemap: true, inlineDynamicImports: true } // ES module output
+  ],
+  external: [
+    ...Object.keys(pkg.peerDependencies || {}) // Excludes peer dependencies from the bundle
   ],
   external: [
     ...Object.keys(pkg.peerDependencies || {}), // Excludes peer dependencies from the bundle
-    'react', 'react-dom' // Excludes React and ReactDOM
+    './jest.config.js' // Add the file path you want to exclude from bundling
   ],
   plugins: [
     json(), // Enables JSON imports

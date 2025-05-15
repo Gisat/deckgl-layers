@@ -1,30 +1,66 @@
 "use client"
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DeckGL } from "@deck.gl/react";
 import { defaultMapState, defaultMapView } from "../logic/map.defaults";
 import { createOpenstreetMap } from "../logic/layers.basemaps";
 import "../maps.css";
+import { createCogLayer } from "@geoimage/layers/tile.cog";
+import { TileLayer } from "@deck.gl/geo-layers";
+import { CogDynamicImage } from "@geoimage/cogs/models.cog";
+import { PathLayer } from "@deck.gl/layers";
+import { createBoundingBoxLayer } from "@geoimage/layers/path.bbox";
+import { RenderByValueDecider } from "@geoimage/shared/rendering/rendering.types";
 
-/**
- * CogMap map component (client side)
- * This component is used to render the map with DeckGL
- * It's the DeckGL map wrapper with dynamic DeckGL map size
- * @returns {JSX.Element} Wrapped map component
- */
-export const CogMap = () => {
-    // list of layers to be rendered
-    // TODO: Now its harcoded, but later might be dynamic
-    const layers = [
-        createOpenstreetMap()
-    ];
+interface CogMapProps {
+    cogUrl: string;
+    renderLogicMap: RenderByValueDecider;
+    debugMode?: boolean;
+}
+
+export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
+
+    // TODO: custom hook?
+    const [cogLayer, setCogLayer] = useState<TileLayer | null>(null);
+    const [bboxLayer, setBoxLayer] = useState<PathLayer | null>(null);
+
+    useEffect(() => {
+        const fetchCog = async () => {
+
+            // Load the COG image from the URL
+            const usedCog = await CogDynamicImage.fromUrl(cogUrl);
+
+            // Create the COG layer using the loaded image
+            setCogLayer(createCogLayer({
+                id: "cog-layer",
+                cogImage: usedCog,
+                tileSize: 256,
+                minZoom: 0,
+                maxZoom: 20,
+                renderLogicMap,
+                debugMode
+            }))
+
+            // Create bbox layer to see image bounds in debug mode
+            if (debugMode) 
+                setBoxLayer(createBoundingBoxLayer(usedCog.bbox, true))
+
+            };
+        fetchCog();
+    }, []);
 
     return (
         <section className="dgl-MapWrapper">
             <DeckGL
                 views={defaultMapView()}
                 initialViewState={defaultMapState()}
-                layers={layers}
+                layers={
+                    [
+                        createOpenstreetMap(),
+                        cogLayer,
+                        bboxLayer
+                    ]
+                }
                 controller={true}
                 width="100%"
                 height="100%"
