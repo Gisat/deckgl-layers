@@ -5,12 +5,9 @@ import { DeckGL } from "@deck.gl/react";
 import { defaultMapState, defaultMapView } from "../logic/map.defaults";
 import { createOpenstreetMap } from "../logic/layers.basemaps";
 import "../maps.css";
-import { createCogLayer } from "@geoimage/layers/tile.cog";
 import { TileLayer } from "@deck.gl/geo-layers";
-import { CogDynamicImage } from "@geoimage/cogs/models.cog";
 import { PathLayer } from "@deck.gl/layers";
-import { createBoundingBoxLayer } from "@geoimage/layers/path.bbox";
-import { RenderByValueDecider } from "@geoimage/shared/rendering/rendering.types";
+import { RenderByValueDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage";
 
 interface CogMapProps {
     cogUrl: string;
@@ -31,15 +28,13 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
             const usedCog = await CogDynamicImage.fromUrl(cogUrl);
 
             // Create the COG layer using the loaded image
-            setCogLayer(createCogLayer({
+            const cogLayer = createCogLayer({
                 id: "cog-layer",
                 cogImage: usedCog,
-                tileSize: 256,
-                minZoom: 0,
-                maxZoom: 20,
-                renderLogicMap,
-                debugMode
-            }))
+                renderLogicMap: renderLogicMap,
+                debugMode: debugMode
+            });
+            setCogLayer(cogLayer);
 
             // Create bbox layer to see image bounds in debug mode
             if (debugMode) 

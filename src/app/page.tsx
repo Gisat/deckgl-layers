@@ -1,5 +1,5 @@
 import { CogMap } from "@features/maps/components/CogMap";
-import { RenderByValueDecider } from "@geoimage/shared/rendering/rendering.types";
+import { RenderByValueDecider } from "geoimage";
 
 // is the demo in debug mode?
 const IS_DEBUG_MODE = true
