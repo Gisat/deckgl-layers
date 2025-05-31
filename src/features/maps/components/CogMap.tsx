@@ -7,7 +7,7 @@ import { createOpenstreetMap } from "../logic/layers.basemaps";
 import "../maps.css";
 import { TileLayer } from "@deck.gl/geo-layers";
 import { PathLayer } from "@deck.gl/layers";
-import { RenderByValueDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage";
+import { RenderByValueDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage-dev";
 
 interface CogMapProps {
     cogUrl: string;
@@ -32,7 +32,10 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
                 id: "cog-layer",
                 cogImage: usedCog,
                 renderLogicMap: renderLogicMap,
-                debugMode: debugMode
+                debugMode: debugMode,
+                maxZoom: 30,
+                minZoom: 0,
+                tileSize: 256,
             });
             setCogLayer(cogLayer);
 
