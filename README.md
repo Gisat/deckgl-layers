@@ -8,6 +8,7 @@ This repository contains source of Geoimage NPM and set of free sandbox demos fo
 - Open terminal in package root.
 - Run `npm i` and `npm run build`
 - Run `yalc publish` or `yalc publish --watch` for adding the package to local NPM repository
+- Go to this application repo and open the terminal in the root.
 - Run `npm i`
 - Run `yalc add geoimage-dev`
 - Run `npm run dev` for development run.
