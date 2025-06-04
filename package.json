@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {
     "test:geoimage": "vitest --config src/geoimage/vitest.config.ts",
-    "dev": "next dev",
+    "dev": "npm i && next dev",
     "test": "vitest --config vitest.config.ts",
     "build": "next build",
     "start": "next start",
