@@ -3,6 +3,9 @@
 .DS_Store
 /.vscode
 
+.yalc/
+yalc.lock
+
 
 # dependencies
 /node_modules
