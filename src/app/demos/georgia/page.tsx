@@ -8,7 +8,7 @@ const IS_DEBUG_MODE = true
 // demo page
 export default function GeorgiaDemo() {
   return (
-      <main>
+      <main className="dgl-georgia-wrapper">
         <CogMap
           cogUrl={useTestCogUrl()}
           renderLogicMap={useTestRenderingMapLogic({debugMode: IS_DEBUG_MODE})}
