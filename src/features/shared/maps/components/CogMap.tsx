@@ -2,20 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import { DeckGL } from "@deck.gl/react";
-import { defaultMapState, defaultMapView } from "../logic/map.defaults";
-import { createOpenstreetMap } from "../logic/layers.basemaps";
+import { createOpenstreetMap } from "@features/shared/maps/layers/layers.basemaps";
 import "../maps.css";
 import { TileLayer } from "@deck.gl/geo-layers";
 import { PathLayer } from "@deck.gl/layers";
 import { RenderByValueDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage-dev";
+import { MapViewState } from "@deck.gl/core";
+import { defaultMapView } from "@features/shared/setup/defaults.view";
 
 interface CogMapProps {
     cogUrl: string;
     renderLogicMap: RenderByValueDecider;
+    viewState: MapViewState;
     debugMode?: boolean;
 }
 
-export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
+export const CogMap = ({cogUrl, renderLogicMap, debugMode, viewState} : CogMapProps) => {
 
     // TODO: custom hook?
     const [cogLayer, setCogLayer] = useState<TileLayer | null>(null);
@@ -51,7 +53,7 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
         <section className="dgl-MapWrapper">
             <DeckGL
                 views={defaultMapView()}
-                initialViewState={defaultMapState()}
+                initialViewState={viewState}
                 layers={
                     [
                         createOpenstreetMap(),
