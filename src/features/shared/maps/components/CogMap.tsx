@@ -6,18 +6,18 @@ import { createOpenstreetMap } from "@features/shared/maps/layers/layers.basemap
 import "../maps.css";
 import { TileLayer } from "@deck.gl/geo-layers";
 import { PathLayer } from "@deck.gl/layers";
-import { RenderByValueDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage-dev";
+import { RenderingDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage-dev";
 import { MapViewState } from "@deck.gl/core";
 import { defaultMapView } from "@features/shared/setup/defaults.view";
 
 interface CogMapProps {
     cogUrl: string;
-    renderLogicMap: RenderByValueDecider;
+    renderingDecider: RenderingDecider;
     viewState: MapViewState;
     debugMode?: boolean;
 }
 
-export const CogMap = ({cogUrl, renderLogicMap, debugMode, viewState} : CogMapProps) => {
+export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState} : CogMapProps) => {
 
     // TODO: custom hook?
     const [cogLayer, setCogLayer] = useState<TileLayer | null>(null);
@@ -33,8 +33,8 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode, viewState} : CogMapPr
             const cogLayer = createCogLayer({
                 id: "cog-layer",
                 cogImage: usedCog,
-                renderLogicMap: renderLogicMap,
-                debugMode: debugMode,
+                renderingDecider,
+                debugMode,
                 maxZoom: 30,
                 minZoom: 0,
                 tileSize: 256,

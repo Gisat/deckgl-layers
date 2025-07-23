@@ -1,4 +1,4 @@
-import { useTestCogUrl, useTestRenderingMapLogic } from "@features/demos/georgia/cog.setup";
+import { useGeorgiaCogUrl, useGeorgiaRenderingDecider } from "@features/demos/georgia/cog.setup";
 import { georgiaDefaultMapState } from "@features/demos/georgia/map.defaults";
 import { CogMap } from "@features/shared/maps/components/CogMap";
 
@@ -10,8 +10,8 @@ export default function GeorgiaDemo() {
   return (
       <main className="dgl-georgia-wrapper">
         <CogMap
-          cogUrl={useTestCogUrl()}
-          renderLogicMap={useTestRenderingMapLogic({debugMode: IS_DEBUG_MODE})}
+          cogUrl={useGeorgiaCogUrl()}
+          renderingDecider={useGeorgiaRenderingDecider({debugMode: IS_DEBUG_MODE})}
           debugMode={IS_DEBUG_MODE}
           viewState={georgiaDefaultMapState()}
         />
