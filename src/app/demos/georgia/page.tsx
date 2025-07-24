@@ -1,6 +1,8 @@
 import { useGeorgiaCogUrl, useGeorgiaRenderingDecider } from "@features/demos/georgia/cog.setup";
 import { georgiaDefaultMapState } from "@features/demos/georgia/map.defaults";
 import { CogMap } from "@features/shared/maps/components/CogMap";
+import "./georgia.css"
+
 
 // is the demo in debug mode?
 const IS_DEBUG_MODE = true

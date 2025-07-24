@@ -1,7 +1,7 @@
 import { RenderingDecider, RenderingDeciderKey, renderingDeciderKeyFromScale } from "geoimage-dev";
 
 // URL to the COG image for the demo
-export const useTestCogUrl = () => "https://eu-central-1.linodeobjects.com/gisat-data/LUISA_GST-66/app-esaLuisa/prod/v1/rasters/continental/npp_act/openEO_2000-01-01Z_cog.tif"
+export const useAfricaSmallUrl = () => "https://eu-central-1.linodeobjects.com/gisat-data/LUISA_GST-66/app-esaLuisa/prod/v1/rasters/continental/npp_act/openEO_2000-01-01Z_cog.tif"
 
 // Function to create a map for rendering RGBA colors based on pixel values for demo COG
 
