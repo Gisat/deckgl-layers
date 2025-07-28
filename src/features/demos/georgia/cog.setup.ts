@@ -7,12 +7,13 @@ export const useGeorgiaCogUrl = () => "https://gisat-gis.eu-central-1.linodeobje
 // Function to create a map for rendering RGBA colors based on pixel values for demo COG
 
 // TODO: more precise styling for later (maybe some specific demo, like specified data with color palethe?)
-export const useGeorgiaRenderingDecider = ({debugMode = false}: {debugMode?: boolean}): RenderingDecider => {
+export const useGeorgiaRenderingDecider = ({ debugMode = false }: { debugMode?: boolean }): RenderingDecider => {
+
+    const alpha = 170;
 
     const randomR = Math.floor(Math.random() * 255);
     const randomG = Math.floor(Math.random() * 255);
     const randomB = Math.floor(Math.random() * 255);
-    const alpha = 170;
 
     const decider = new Map<RenderingDeciderKey, [number, number, number, number]>();
 
@@ -22,9 +23,10 @@ export const useGeorgiaRenderingDecider = ({debugMode = false}: {debugMode?: boo
         decider.set(255, [50, 50, 50, alpha]); // Outer box value
     }
 
-    decider.set(11, [255, 0, 0, 255]); // Red for 11
-    decider.set(12, [0, 255, 0, 255]); // Green for 12
-    decider.set(13, [0, 0, 255, 255]); // Blue for 13
+    decider.set(11, [255, 232, 117, alpha]);
+    decider.set(12, [216, 255, 146, alpha]);
+    decider.set(13, [237, 130, 0, alpha]);
+    decider.set(22, [0, 150, 40, alpha]);
 
     return decider;
 }
