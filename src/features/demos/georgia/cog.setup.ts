@@ -26,7 +26,11 @@ export const useGeorgiaRenderingDecider = ({ debugMode = false }: { debugMode?: 
     decider.set(11, [255, 232, 117, alpha]);
     decider.set(12, [216, 255, 146, alpha]);
     decider.set(13, [237, 130, 0, alpha]);
+    decider.set(20, [0, 150, 40, alpha]);
+    decider.set(21, [0, 150, 40, alpha]);
     decider.set(22, [0, 150, 40, alpha]);
+    decider.set(23, [0, 150, 40, alpha]);
+    decider.set(24, [0, 150, 40, alpha]);
 
     return decider;
 }

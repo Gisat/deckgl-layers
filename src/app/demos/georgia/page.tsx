@@ -5,7 +5,7 @@ import "./georgia.css"
 
 
 // is the demo in debug mode?
-const IS_DEBUG_MODE = false
+const IS_DEBUG_MODE = true
 
 // demo page
 export default function GeorgiaDemo() {
