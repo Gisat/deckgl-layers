@@ -24,7 +24,7 @@ export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMod
     }
 
     const step = 100; // Step for the scale
-    for (let i = 0; i < 3000; i += 100) {
+    for (let i = 0; i < 10000; i += 100) {
         const key = renderingDeciderKeyFromScale([i, i + step]); // Create a key for the scale
         decider.set(key, randomColor()); // Assign random color to each scale
 
