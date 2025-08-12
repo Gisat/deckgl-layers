@@ -1,4 +1,4 @@
-import { RenderingDecider, RenderingDeciderKey, renderingDeciderKeyFromScale } from "geoimage-dev";
+import { RenderingDecider, RenderingDeciderKey, generateScaleDeciderKey } from "geoimage-dev";
 
 // URL to the COG image for the demo
 export const useAfricaSmallUrl = () => "https://eu-central-1.linodeobjects.com/gisat-data/LUISA_GST-66/app-esaLuisa/prod/v1/rasters/continental/npp_act/openEO_2000-01-01Z_cog.tif"
@@ -19,13 +19,11 @@ export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMod
 
     const decider = new Map<RenderingDeciderKey | "unknown", [number, number, number, number]>();
 
-    if (debugMode) {
-        decider.set("unknown", [0, 0, 0, 0]); // Unknown value
-    }
+    decider.set("unknown", [0, 0, 0, 0]); // Unknown value
 
     const step = 100; // Step for the scale
-    for (let i = 0; i < 10000; i += 100) {
-        const key = renderingDeciderKeyFromScale([i, i + step]); // Create a key for the scale
+    for (let i = 1; i < 5000; i += step) {
+        const key = generateScaleDeciderKey([i, i + step]); // Create a key for the scale
         decider.set(key, randomColor()); // Assign random color to each scale
 
     }

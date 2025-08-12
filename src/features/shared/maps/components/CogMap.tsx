@@ -27,12 +27,12 @@ export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState} : CogMap
         const fetchCog = async () => {
 
             // Load the COG image from the URL
-            const usedCog = await CogDynamicImage.fromUrl(cogUrl);
+            const dynamicCog = await CogDynamicImage.fromUrl(cogUrl);
 
             // Create the COG layer using the loaded image
             const cogLayer = createCogLayer({
                 id: "cog-layer",
-                cogImage: usedCog,
+                cogImage: dynamicCog,
                 renderingDecider,
                 debugMode,
                 maxZoom: 30,
@@ -43,7 +43,7 @@ export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState} : CogMap
 
             // Create bbox layer to see image bounds in debug mode
             if (debugMode) 
-                setBoxLayer(createBoundingBoxLayer(usedCog.bbox, true))
+                setBoxLayer(createBoundingBoxLayer(dynamicCog.bbox, true))
 
             };
         fetchCog();
