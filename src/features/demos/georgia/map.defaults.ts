@@ -4,7 +4,7 @@ import { MapView, MapViewState } from "@deck.gl/core"
  * Default state of the map
  * @returns 
  */
-export const defaultMapState = () => {
+export const georgiaDefaultMapState = () => {
   const initMapState: MapViewState = {
     latitude: 41.6434,
     longitude: 41.6399,
@@ -15,13 +15,4 @@ export const defaultMapState = () => {
   }
 
   return initMapState
-}
-
-/**
- * Default state of the map view
- * @returns 
- */
-export const defaultMapView = () => {
-  const defaultView = new MapView({ controller: true, repeat: true })
-  return defaultView
 }

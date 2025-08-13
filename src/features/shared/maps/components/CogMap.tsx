@@ -2,20 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import { DeckGL } from "@deck.gl/react";
-import { defaultMapState, defaultMapView } from "../logic/map.defaults";
-import { createOpenstreetMap } from "../logic/layers.basemaps";
+import { createOpenstreetMap } from "@features/shared/maps/layers/layers.basemaps";
 import "../maps.css";
 import { TileLayer } from "@deck.gl/geo-layers";
 import { PathLayer } from "@deck.gl/layers";
-import { RenderByValueDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage-dev";
+import { RenderingDecider, CogDynamicImage, createCogLayer, createBoundingBoxLayer } from "geoimage-dev";
+import { MapViewState } from "@deck.gl/core";
+import { defaultMapView } from "@features/shared/setup/defaults.view";
 
 interface CogMapProps {
     cogUrl: string;
-    renderLogicMap: RenderByValueDecider;
+    renderingDecider: RenderingDecider;
+    viewState: MapViewState;
     debugMode?: boolean;
 }
 
-export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
+export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState} : CogMapProps) => {
 
     // TODO: custom hook?
     const [cogLayer, setCogLayer] = useState<TileLayer | null>(null);
@@ -25,14 +27,14 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
         const fetchCog = async () => {
 
             // Load the COG image from the URL
-            const usedCog = await CogDynamicImage.fromUrl(cogUrl);
+            const dynamicCog = await CogDynamicImage.fromUrl(cogUrl);
 
             // Create the COG layer using the loaded image
             const cogLayer = createCogLayer({
                 id: "cog-layer",
-                cogImage: usedCog,
-                renderLogicMap: renderLogicMap,
-                debugMode: debugMode,
+                cogImage: dynamicCog,
+                renderingDecider,
+                debugMode,
                 maxZoom: 30,
                 minZoom: 0,
                 tileSize: 256,
@@ -41,7 +43,7 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
 
             // Create bbox layer to see image bounds in debug mode
             if (debugMode) 
-                setBoxLayer(createBoundingBoxLayer(usedCog.bbox, true))
+                setBoxLayer(createBoundingBoxLayer(dynamicCog.bbox, true))
 
             };
         fetchCog();
@@ -51,7 +53,7 @@ export const CogMap = ({cogUrl, renderLogicMap, debugMode} : CogMapProps) => {
         <section className="dgl-MapWrapper">
             <DeckGL
                 views={defaultMapView()}
-                initialViewState={defaultMapState()}
+                initialViewState={viewState}
                 layers={
                     [
                         createOpenstreetMap(),
