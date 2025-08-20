@@ -1,9 +1,7 @@
 import { RenderingDecider, RenderingDeciderKey, generateScaleDeciderKey } from "geoimage-dev";
 
 // URL to the COG image for the demo
-export const useAfricaSmallUrl = () => "https://eu-central-1.linodeobjects.com/gisat-data/LUISA_GST-66/app-esaLuisa/prod/v1/rasters/continental/npp_act/openEO_2000-01-01Z_cog.tif"
-
-// Function to create a map for rendering RGBA colors based on pixel values for demo COG
+export const useAfricaUrl = () => "https://eu-central-1.linodeobjects.com/gisat-data/LUISA_GST-66/app-esaLuisa/dev/rasters/continental/npp_act_2000-2020_cog_band.tif"
 
 // TODO: more precise styling for later (maybe some specific demo, like specified data with color palethe?)
 export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMode?: boolean }): RenderingDecider => {
@@ -30,3 +28,9 @@ export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMod
 
     return decider;
 }
+
+/**
+ * Returns bands for africa demo as an array of numbers
+ * @returns 
+ */
+export const useAfricaBands = () => [2]

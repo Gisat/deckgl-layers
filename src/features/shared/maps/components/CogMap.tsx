@@ -13,11 +13,12 @@ import { defaultMapView } from "@features/shared/setup/defaults.view";
 interface CogMapProps {
     cogUrl: string;
     renderingDecider: RenderingDecider;
+    bands: number[];
     viewState: MapViewState;
     debugMode?: boolean;
 }
 
-export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState} : CogMapProps) => {
+export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState, bands} : CogMapProps) => {
 
     // TODO: custom hook?
     const [cogLayer, setCogLayer] = useState<TileLayer | null>(null);
@@ -35,6 +36,7 @@ export const CogMap = ({cogUrl, renderingDecider, debugMode, viewState} : CogMap
                 cogImage: dynamicCog,
                 renderingDecider,
                 debugMode,
+                bands,
                 maxZoom: 30,
                 minZoom: 0,
                 tileSize: 256,

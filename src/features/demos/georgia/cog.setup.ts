@@ -34,3 +34,9 @@ export const useGeorgiaRenderingDecider = ({ debugMode = false }: { debugMode?: 
 
     return decider;
 }
+
+/**
+ * Returns bands for georgia demo as an array of numbers
+ * @returns 
+ */
+export const useGeorgiaBands = () => [0]
