@@ -1,3 +1,5 @@
+"use client"
+
 import "./africa.css"
 
 import { CogMap } from "@features/shared/maps/components/CogMap";
@@ -16,7 +18,7 @@ export default function AfricaDemoPage() {
           renderingDecider={useAfricaRenderingScaleDecider({debugMode: IS_DEBUG_MODE})}
           debugMode={IS_DEBUG_MODE}
           viewState={useAfricaMapDefaults()}
-          bands={useAfricaBands()}
+          band={useAfricaBands()}
         />
       </main>
   );

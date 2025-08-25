@@ -1,10 +1,10 @@
-import { RenderingDecider, RenderingDeciderKey, generateScaleDeciderKey } from "geoimage-dev";
+import { RenderingDeciderByScale, RenderingDeciderKey } from "geoimage-dev";
 
 // URL to the COG image for the demo
 export const useAfricaUrl = () => "https://eu-central-1.linodeobjects.com/gisat-data/LUISA_GST-66/app-esaLuisa/dev/rasters/continental/npp_act_2000-2020_cog_band.tif"
 
 // TODO: more precise styling for later (maybe some specific demo, like specified data with color palethe?)
-export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMode?: boolean }): RenderingDecider => {
+export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMode?: boolean }): RenderingDeciderByScale => {
 
     const randomColor = (): [number, number, number, number] => {
         return [
@@ -15,17 +15,16 @@ export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMod
         ];
     }
 
-    const decider = new Map<RenderingDeciderKey | "unknown", [number, number, number, number]>();
+    const deciderMap = new Map<RenderingDeciderKey, [number, number, number, number]>();
 
-    decider.set("unknown", [0, 0, 0, 0]); // Unknown value
+    deciderMap.set("unknown", [0, 0, 0, 0]); // Unknown value
 
     const step = 100; // Step for the scale
-    for (let i = 1; i < 5000; i += step) {
-        const key = generateScaleDeciderKey([i, i + step]); // Create a key for the scale
-        decider.set(key, randomColor()); // Assign random color to each scale
-
+    for (let scaleBound = 1; scaleBound <= 5000; scaleBound += step) {
+        deciderMap.set(scaleBound, randomColor()); // Assign random color to each scale
     }
 
+    const decider = new RenderingDeciderByScale(deciderMap);
     return decider;
 }
 
@@ -33,4 +32,4 @@ export const useAfricaRenderingScaleDecider = ({ debugMode = false }: { debugMod
  * Returns bands for africa demo as an array of numbers
  * @returns 
  */
-export const useAfricaBands = () => [2]
+export const useAfricaBands = () => 2
