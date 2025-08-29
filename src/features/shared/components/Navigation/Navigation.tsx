@@ -96,7 +96,7 @@ export const Navigation = ({condensed, hideHomeLink, onLinkClick}: NavigationPro
 			<h2>Demos</h2>
 			{/* Demo links section */}
 			<ul>
-				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/georgia" title="COG in debug mode (Georiga)">Rendering a single-band COG in a debug mode</NavigationLink>
+				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/georgia" title="COG in debug mode (Georgia)">Rendering a single-band COG in a debug mode</NavigationLink>
 				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/africa" title="Large size COG (Africa)">Rendering a single band from a large multiband COG</NavigationLink>
 			</ul>
 		</nav>
