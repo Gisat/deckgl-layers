@@ -12,14 +12,12 @@ const IS_DEBUG_MODE = false
 // demo page
 export default function AfricaDemoPage() {
   return (
-      <main>
-        <CogMap
-          cogUrl={useAfricaUrl()}
-          renderingDecider={useAfricaRenderingScaleDecider({debugMode: IS_DEBUG_MODE})}
-          debugMode={IS_DEBUG_MODE}
-          viewState={useAfricaMapDefaults()}
-          band={useAfricaBands()}
-        />
-      </main>
+	  <CogMap
+		  cogUrl={useAfricaUrl()}
+		  renderingDecider={useAfricaRenderingScaleDecider({debugMode: IS_DEBUG_MODE})}
+		  debugMode={IS_DEBUG_MODE}
+		  viewState={useAfricaMapDefaults()}
+		  band={useAfricaBands()}
+	  />
   );
 }

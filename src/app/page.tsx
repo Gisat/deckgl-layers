@@ -1,10 +1,10 @@
+import {Navigation} from "@features/shared/components/Navigation/Navigation";
 
 export default function Home() {
   return (
       <main>
-        <a href="/demos/georgia">Go to Georgia Demo</a>
-        <br />
-        <a href="/demos/africa">Go to Africa Demo</a>
+		  <h1>Documentation</h1>
+        <Navigation hideHomeLink/>
       </main>
   );
 }
