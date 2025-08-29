@@ -1,4 +1,6 @@
-import { useGeorgiaCogUrl, useGeorgiaRenderingDecider } from "@features/demos/georgia/cog.setup";
+"use client"
+
+import { useGeorgiaBands, useGeorgiaCogUrl, useGeorgiaRenderingDecider } from "@features/demos/georgia/cog.setup";
 import { georgiaDefaultMapState } from "@features/demos/georgia/map.defaults";
 import { CogMap } from "@features/shared/maps/components/CogMap";
 import "./georgia.css"
@@ -16,6 +18,7 @@ export default function GeorgiaDemo() {
           renderingDecider={useGeorgiaRenderingDecider({debugMode: IS_DEBUG_MODE})}
           debugMode={IS_DEBUG_MODE}
           viewState={georgiaDefaultMapState()}
+          band={useGeorgiaBands()} 
         />
       </main>
   );
