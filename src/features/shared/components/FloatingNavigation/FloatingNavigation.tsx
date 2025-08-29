@@ -25,7 +25,7 @@ export const FloatingNavigation = () => {
 				position="right"
 				overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}
 			>
-				<Navigation onLinkClick={() => setOpen(false)}/>
+				<Navigation condensed onLinkClick={() => setOpen(false)}/>
 			</Drawer>
 
 			<ActionIcon
