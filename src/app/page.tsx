@@ -1,10 +1,10 @@
+import {Navigation} from "@features/shared/components/Navigation/Navigation";
 
 export default function Home() {
   return (
-      <main>
-        <a href="/demos/georgia">Go to Georgia Demo</a>
-        <br />
-        <a href="/demos/africa">Go to Africa Demo</a>
+      <main className="dgl-Home">
+		  <h1>COG library documentation</h1>
+        <Navigation hideHomeLink/>
       </main>
   );
 }
