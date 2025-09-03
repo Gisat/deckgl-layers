@@ -97,7 +97,8 @@ export const Navigation = ({condensed, hideHomeLink, onLinkClick}: NavigationPro
 			{/* Demo links section */}
 			<ul>
 				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/georgia" title="COG in debug mode (Georgia)">Rendering a single-band COG in a debug mode</NavigationLink>
-				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/africa" title="Large size COG (Africa)">Rendering a single band from a large multiband COG</NavigationLink>
+				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/africa" title="Large multiband COG (Africa)">Rendering a single band from a large multiband COG</NavigationLink>
+				<NavigationLink condensed={condensed} onClick={onLinkClick} href="/demos/kazakhstan" title="Large singleband COG (Kazakhstan)">Rendering a single band from a large singleband COG</NavigationLink>
 			</ul>
 		</nav>
 	);

@@ -1,10 +1,9 @@
 "use client"
 
-import { useGeorgiaBands, useGeorgiaCogUrl, useGeorgiaRenderingDecider } from "@features/demos/georgia/cog.setup";
-import { georgiaDefaultMapState } from "@features/demos/georgia/map.defaults";
 import { CogMap } from "@features/shared/maps/components/CogMap";
 import "./kazakhstan.css"
 import { useKazakhstanBands, useKazakhstanCogUrl, useKazakhstanRenderingDecider } from "@features/demos/kazakhstan/cog.setup";
+import { kazakhstanDefaultMapState } from "@features/demos/kazakhstan/map.defaults";
 
 
 // is the demo in debug mode?
@@ -17,8 +16,8 @@ export default function KazakhstanDemo() {
 		  cogUrl={useKazakhstanCogUrl()}
 		  renderingDecider={useKazakhstanRenderingDecider({debugMode: IS_DEBUG_MODE})}
 		  debugMode={IS_DEBUG_MODE}
-		  viewState={georgiaDefaultMapState()}
-		  band={useKazakhstanBands()}
+		  viewState={kazakhstanDefaultMapState()}
+		  band={0}
 	  />
   );
 }
